@@ -1,30 +1,26 @@
-"""
-디버그 코드 정리된 배치 콜레이트 함수들
-"""
 import torch
+from config.constants import DEFAULT_SR
 
 def sudormrf_dynamic_mix_collate_fn(batch, config=None):
-    """SudoRM-RF 방식의 동적 믹스를 위한 배치 콜레이트 (정리 버전)"""
-    # config에서 sample_rate 가져오기
+    # 16kHz 설정 및 15초 길이 사용
     if config is not None:
         SR = config.get('sample_rate', 16000)
         max_duration = config.get('max_audio_duration', 15.0)
     else:
-        from config.constants import DEFAULT_SR
-        SR = DEFAULT_SR
+        SR = DEFAULT_SR # 16,000Hz
         max_duration = 15.0
     
-    # 모든 아이템의 길이 확인
+    # s1, s2 배치 길이 확인
     all_lengths = []
     for item in batch:
-        sources_length = item['sources'].shape[1]
-        s1_length = len(item['separation_targets']['s1'])
-        s2_length = len(item['separation_targets']['s2'])
+        sources_length = item['sources'].shape[1] # 오디오 길이
+        s1_length = len(item['separation_targets']['s1']) # 음성 길이
+        s2_length = len(item['separation_targets']['s2']) # 소음 길이
         all_lengths.extend([sources_length, s1_length, s2_length])
     
-    # 최대 길이 결정
-    max_length_in_batch = max(all_lengths) if all_lengths else int(max_duration * SR)
-    max_allowed_length = int(max_duration * SR)
+    max_length_in_batch = max(all_lengths) if all_lengths else int(max_duration * SR) # all_lengths 리스트에서 가장 긴 길이 설정
+    max_allowed_length = int(max_duration * SR) # 240,000 샘플 상한
+    # 자르는 기준 설정
     target_length = min(max_length_in_batch, max_allowed_length)
 
     batch_sources = []
@@ -35,7 +31,7 @@ def sudormrf_dynamic_mix_collate_fn(batch, config=None):
 
     for i, item in enumerate(batch):
         try:
-            # 각 아이템의 실제 길이 확인
+            # 샘플에서 source, s1, s2 길이 추출
             sources = item['sources']
             s1 = item['separation_targets']['s1']
             s2 = item['separation_targets']['s2']
@@ -44,30 +40,32 @@ def sudormrf_dynamic_mix_collate_fn(batch, config=None):
             s1_len = len(s1)
             s2_len = len(s2)
             
-            # 가장 짧은 길이로 맞추기
+            # 가장 짧은 길이 확인
             min_current_length = min(sources_len, s1_len, s2_len)
             
-            # 일관된 길이로 자르기
+            # 가장 짧은 길이 기준으로 자르기
             sources_trimmed = sources[:, :min_current_length]
             s1_trimmed = s1[:min_current_length]
             s2_trimmed = s2[:min_current_length]
             
-            # target_length에 맞춰 패딩 또는 자르기
+            # target_length 기준 부족한 만큼 zero padding
             if min_current_length < target_length:
                 pad_length = target_length - min_current_length
                 sources_padded = torch.cat([sources_trimmed, torch.zeros(2, pad_length)], dim=1)
                 s1_padded = torch.cat([s1_trimmed, torch.zeros(pad_length)])
                 s2_padded = torch.cat([s2_trimmed, torch.zeros(pad_length)])
+            # target_length 만큼 자르기
             else:
                 sources_padded = sources_trimmed[:, :target_length]
                 s1_padded = s1_trimmed[:target_length]
                 s2_padded = s2_trimmed[:target_length]
             
-            # 최종 크기 검증
+            # 자른 후 shape 검정
             assert sources_padded.shape == (2, target_length)
             assert s1_padded.shape == (target_length,)
             assert s2_padded.shape == (target_length,)
 
+            # 자른 후 각 리스트에 추가
             batch_sources.append(sources_padded)
             batch_s1.append(s1_padded)
             batch_s2.append(s2_padded)
@@ -82,7 +80,7 @@ def sudormrf_dynamic_mix_collate_fn(batch, config=None):
             batch_s1_filenames.append(f"error_{i}.wav")
             batch_s2_filenames.append(f"error_{i}.wav")
 
-    # 배치 생성 전 최종 검증
+    # 샘플이 없다면 에러 발생
     if not batch_sources:
         raise ValueError("No valid items in batch")
     

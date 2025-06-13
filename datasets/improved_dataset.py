@@ -1,12 +1,10 @@
-"""
-개선된 오디오 데이터셋 (기존 방식)
-"""
 import os
 import torch
 import numpy as np
 import librosa
 from torch.utils.data import Dataset
 from config.constants import SR
+from config.constants import DEFAULT_SR
 
 class ImprovedAudioDataset(Dataset):
     """개선된 오디오 데이터셋 (기존 방식, 길이 일관성 보장)"""
@@ -20,7 +18,6 @@ class ImprovedAudioDataset(Dataset):
             self.SR = config.get('sample_rate', 16000)
         else:
             # 하위호환성을 위한 fallback
-            from config.constants import DEFAULT_SR
             self.SR = DEFAULT_SR
         
         # 🔧 고정 길이 설정

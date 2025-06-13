@@ -4,6 +4,7 @@ import torch
 import librosa
 from torch.utils.data import Dataset
 from config.constants import SR
+from config.constants import DEFAULT_SR
 
 class SudoRMRFDynamicMixDataset(Dataset):
     """SudoRM-RF 방식의 실시간 s1 + s2 믹싱 데이터셋 (길이 일관성 보장)"""
@@ -14,25 +15,26 @@ class SudoRMRFDynamicMixDataset(Dataset):
         self.max_duration = max_duration
         self.use_online_augment = use_online_augment
         
-        # config에서 sample_rate 가져오기
+        # 기본값 16000Hz
         if config is not None:
             self.SR = config.get('sample_rate', 16000)
         else:
             # 하위호환성을 위한 fallback
-            from config.constants import DEFAULT_SR
             self.SR = DEFAULT_SR
         
-        # 🔧 고정 길이 설정 (일관성 보장)
+        # 15초 길이 보장
         self.target_samples = int(self.max_duration * self.SR)
 
+        # s1(음성), s2(소음) 폴더 구분
         self.split_dir = os.path.join(dataset_root, split)
         self.s1_dir = os.path.join(self.split_dir, 'spk1')
         self.s2_dir = os.path.join(self.split_dir, 'spk2')
 
+        # s1, s2 폴더가 없다면 에러 발생
         if not all(os.path.exists(d) for d in [self.s1_dir, self.s2_dir]):
             raise ValueError(f"SudoRM-RF DynamicMix directories not found: {self.s1_dir}, {self.s2_dir}")
 
-        # s1과 s2 파일 목록
+        # s1과 s2 파일 목록(wav 확장자)
         self.s1_files = sorted([f for f in os.listdir(self.s1_dir) if f.endswith('.wav')])
         self.s2_files = sorted([f for f in os.listdir(self.s2_dir) if f.endswith('.wav')])
 
@@ -41,8 +43,10 @@ class SudoRMRFDynamicMixDataset(Dataset):
         if not self.s2_files:
             raise ValueError(f"No s2 files found in {self.s2_dir}")
 
+        # s1, s2 비교하여 짧은 파일 기준 매치
         min_files = min(len(self.s1_files), len(self.s2_files))
 
+        # max_sample 기준 자르기
         if max_samples and min_files > max_samples:
             self.s1_files = self.s1_files[:max_samples]
             self.s2_files = self.s2_files[:max_samples]
