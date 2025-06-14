@@ -13,7 +13,7 @@ from scipy.io import loadmat
 sys.path.insert(0, "/content/drive/MyDrive/joint/sudo_rm_rf")
 sys.path.insert(0, "/content/drive/MyDrive/joint/WaveNet-VNNs-for-ANC/WaveNet_VNNs")
 
-# SudoRM-RF 관련 import
+# C-SudoRM-RF++ 관련 import
 try:
     from sudo_rm_rf.dnn.models.causal_improved_sudormrf_v3 import CausalSuDORMRF
     import sudo_rm_rf.dnn.experiments.utils.mixture_consistency as mixture_consistency
@@ -22,10 +22,10 @@ except ImportError:
         from sudo_rm_rf.dnn.models.causal_improved_sudormrf_v3 import CausalSuDORMRF
         import sudo_rm_rf.dnn.utils.mixture_consistency as mixture_consistency
     except ImportError:
-        print("❌ SudoRM-RF import failed")
+        print("SudoRM-RF import failed")
         raise
 
-# WaveNet 관련 import
+# WaveNet-VNNs 관련 anc 관련 import
 from networks import WaveNet_VNNs
 from utils import fir_filter, SEF
 
@@ -33,7 +33,7 @@ from utils import fir_filter, SEF
 from project_utils.audio_utils import standardize_audio_dims
 from config.constants import SR
 
-# BroadcastClassifier import
+# BroadcastClassifier 분류기 import
 try:
     from models.broadcast_classifier import BroadcastClassifier
     from models.model_utils import load_broadcast_classifier_weights
@@ -44,14 +44,33 @@ except ImportError:
     except ImportError:
         BroadcastClassifier = None
 
-class ImprovedJointModel(nn.Module):
-    """정리된 조인트 모델"""
 
+"""Joint 모델 클래스 정의"""
+
+class ImprovedJointModel(nn.Module):
+
+    """
+    [Joint 모델 역할]
+    - 오디오 분리(Separation), 분류(Classification), ANC(Active Noise Control) 노이즈 저감을 한 번에 처리하는 end-to-end 모델 클래스
+    - C-SudoRM-RF++ 기반 분리 → 안내방송음/그 외 소음 분류 → WaveNet-VNNs 기반 노이즈 저감(ANC) 일관 파이프라인 제공
+    - 학습 및 추론 모두 지원하며, 저지연 처리를 염두에 둔 설계
+    - 안내방송음/그 외 소음 분류를 통해 소스 자동 채널 매핑 가능
+    """
+
+    """
+    Joint 모델의 모든 하위 블록(분리, 분류, ANC 저감)을 생성 및 사전학습된 가중치 로드
+    환경설정(model_config)과 주요 파라미터(eta, clamp 범위 등) 저장, FIR 계수 불러오기 등 전체 시스템 상태 세팅
+    분리모델, 저감모델, 분류기 등 블록별로 필요한 경로, 설정, checkpoint 등 모두 한 번에 등록
+    불러오기 실패 시 fallback(더미값) 등 예외처리까지 포함
+    """
     def __init__(self, sudormrf_checkpoint_path, wavenet_checkpoint_path, wavenet_config_path,
                  broadcast_classifier_checkpoint_path=None, use_broadcast_classifier=False, 
                  model_config=None):
         super().__init__()
 
+        
+
+        #설정값 관리
         self.model_config = model_config or {}
         self.eta_init_value = self.model_config.get('eta_init_value', 0.1)
         self.sef_clamp_range = self.model_config.get('sef_clamp_range', (-10.0, 10.0))
@@ -62,7 +81,8 @@ class ImprovedJointModel(nn.Module):
         self.memory_manager = MemoryManager(self.model_config)
         self.use_broadcast_classifier = use_broadcast_classifier
 
-        # SudoRM-RF 모델 로드
+        # C-SuDoRM-RF++ 분리 모델 초기화/가중치 로드  
+        # 사전학습시 진행했던 하이퍼파라미터 구조 고정(실험에 따라 변경 가능)
         sudormrf_config = {
             'in_audio_channels': 1, 'out_channels': 256, 'in_channels': 384,
             'num_blocks': 16, 'upsampling_depth': 5, 'enc_kernel_size': 21,
@@ -72,31 +92,37 @@ class ImprovedJointModel(nn.Module):
         self.separation_model = CausalSuDORMRF(**sudormrf_config)
         self._load_sudormrf_weights(sudormrf_checkpoint_path)
 
-        # WaveNet 모델 로드
+        # WaveNet-VNNs ANC 저감 모델  
+        # json config 기반 구조 생성 후 가중치 로드
         with open(wavenet_config_path, 'r') as f:
             wavenet_config = json.load(f)
 
         self.noise_reduction_model = WaveNet_VNNs(wavenet_config)
         self._load_wavenet_weights(wavenet_checkpoint_path)
 
-        # BroadcastClassifier 추가
+        # BroadcastClassifier 안내방송음/그 외 소음 이진 분류기 추가
         if self.use_broadcast_classifier and BroadcastClassifier is not None:
             self.broadcast_classifier = BroadcastClassifier(window_len=16000)
             if broadcast_classifier_checkpoint_path and load_broadcast_classifier_weights:
                 self.broadcast_classifier = load_broadcast_classifier_weights(
                     self.broadcast_classifier, broadcast_classifier_checkpoint_path
                 )
-            print("✅ BroadcastClassifier added")
+            print("BroadcastClassifier added")
         else:
             self.broadcast_classifier = None
 
         # ANC 파라미터 설정
         self._setup_anc_paths()
 
-        print("✅ Joint model loaded")
+        print("Joint model loaded")
 
     def _setup_anc_paths(self):
-        """ANC path 설정"""
+        """
+        ANC(Active Noise Control) 파트에서 사용하는 FIR 필터(Primary/Secondary) 계수 및 eta 파라미터 등록
+        mat 파일에서 계수 로드하며, 실패시 랜덤값으로 fallback
+        eta: SEF(스피커 비선형 보정)용 파라미터
+        """
+        
         try:
             pri_path = "/content/drive/MyDrive/joint/WaveNet-VNNs-for-ANC/WaveNet_VNNs/pri_channel.mat"
             sec_path = "/content/drive/MyDrive/joint/WaveNet-VNNs-for-ANC/WaveNet_VNNs/sec_channel.mat"
@@ -112,7 +138,6 @@ class ImprovedJointModel(nn.Module):
             
             self.square_eta = self.model_config.get('eta_init_value', 0.1)
             
-            # register_buffer로 등록
             self.register_buffer('pri_channel', pri_channel)
             self.register_buffer('sec_channel', sec_channel)
             self.register_buffer('pri_filter', pri_channel)
@@ -120,7 +145,7 @@ class ImprovedJointModel(nn.Module):
             self.eta = nn.Parameter(torch.tensor(self.square_eta))
             
         except Exception as e:
-            print(f"⚠️ Failed to load ANC paths: {e}")
+            print(f"Failed to load ANC paths: {e}")
             # Fallback: 더미 필터 생성
             filter_len = 64
             pri_channel = torch.randn(filter_len) * 0.01
@@ -134,7 +159,11 @@ class ImprovedJointModel(nn.Module):
             self.eta = nn.Parameter(torch.tensor(self.square_eta))
 
     def _load_sudormrf_weights(self, checkpoint_path):
-        """SudoRM-RF 가중치 로드"""
+        """
+        C-SudoRM-RF++ 모델 가중치 로드
+        다양한 checkpoint 저장 포맷 지원(딕셔너리 key 자동 처리)
+        Multi-GPU 저장시 key 클린업
+        """
         state = torch.load(checkpoint_path, map_location='cpu', weights_only=False)
 
         if 'model_state_dict' in state:
@@ -144,7 +173,7 @@ class ImprovedJointModel(nn.Module):
         else:
             actual_state = state
 
-        # module. 접두사 제거
+        
         if any(key.startswith('module.') for key in actual_state.keys()):
             new_state = {key[7:] if key.startswith('module.') else key: value
                         for key, value in actual_state.items()}
@@ -153,19 +182,24 @@ class ImprovedJointModel(nn.Module):
         self.separation_model.load_state_dict(actual_state)
 
     def _load_wavenet_weights(self, checkpoint_path):
-        """WaveNet 가중치 로드"""
+        """
+        WaveNet-VNNs 저감 모델 가중치 로드
+        """
         state = torch.load(checkpoint_path, map_location='cpu')
         model_state = state['model'] if 'model' in state else state
         self.noise_reduction_model.load_state_dict(model_state)
 
-    def _sef_nonlinearity(self, signal, eta):        
+    def _sef_nonlinearity(self, signal, eta):
+        """
+        SEF 비선형 처리
+        신호의 clip, NaN/Inf 보정 → SEF 적용 → 차원 변환 일관성 유지
+        ANC 파이프라인에서 loudspeaker 비선형 대응 (WaveNet-VNNs 논문 방식)
+        """        
         clamp_min, clamp_max = self.sef_clamp_range
         signal = torch.clamp(signal, clamp_min, clamp_max)
 
-        # 입력 검증
         if torch.isnan(signal).any() or torch.isinf(signal).any():
-            signal = torch.nan_to_num(signal, nan=0.0, posinf=1.0, neginf=-1.0)
-        
+            signal = torch.nan_to_num(signal, nan=0.0, posinf=1.0, neginf=-1.0)        
         clamp_min, clamp_max = self.sef_clamp_range
 
         # SEF 함수 호출 전 차원 확인
@@ -195,7 +229,10 @@ class ImprovedJointModel(nn.Module):
                 return signal_for_sef
 
     def preprocess_sep_chunk(self, wav_chunk, chunk_len):
-        """추론코드와 동일한 전처리"""
+        """
+        분리모델 입력 전 음성데이터 전처리
+        chunk 길이에 맞춰 zero-padding/자르기 + 평균0/표준편차1로 normalization
+        """
         T = wav_chunk.shape[-1]
         if T < chunk_len:
             wav_chunk = F.pad(wav_chunk, (0, chunk_len - T), mode='constant')
@@ -208,14 +245,20 @@ class ImprovedJointModel(nn.Module):
         return normalized, m_mean, m_std, min(T, chunk_len)
 
     def postprocess_sep_chunk(self, est, m_mean, m_std, valid_len):
-        """추론코드와 동일한 후처리"""
+        """
+        분리 결과를 원래 신호 스케일로 복원
+        normalization 역변환 + padding/trim 보정
+        """
         out = (est * (m_std + 1e-9) + m_mean)
         return out[..., :valid_len]
 
     def compute_sigmoid_mask(self, signal, classifier, device):
+        """
+        BroadcastClassifier 분류기를 활용한 방송/소음 마스킹  
+        일정 구간(window_len) 단위로 자른 뒤, 각 segment별로 이진 분류기 확률값으로 mask 계산
+        """
         window_len = self.classification_window_len
         L = signal.shape[-1]
-        """추론코드와 동일한 sigmoid mask 계산"""
         if classifier is None:
             return torch.zeros(signal.shape[-1], dtype=torch.float32, device=device)
             
@@ -239,8 +282,12 @@ class ImprovedJointModel(nn.Module):
         return masks
 
     def reduce_noise_like_inference(self, noise_signal, device):
-        """추론코드와 동일한 ANC 처리"""
-        SEG_LEN = 10 * SR  # 10초 세그먼트
+        """
+        WaveNet-VNNs 저감 모델로 ANC 처리
+        노이즈 신호를 FIR → WaveNet → SEF → FIR 통과시켜 enhanced/antinoise 생성
+        10초 단위 chunk로 잘라 메모리/속도 효율 높임
+        """
+        SEG_LEN = 10 * SR 
         N = noise_signal.shape[-1]
         outs_en, outs_dn = [], []
 
@@ -270,9 +317,14 @@ class ImprovedJointModel(nn.Module):
         enhanced = torch.cat(outs_en, dim=-1)
         anti_noise = torch.cat(outs_dn, dim=-1)
         return enhanced, anti_noise
+    
+    
 
     def _forward_direct_safe(self, mixed_input, chunk_len=None, return_classification=False):
-        """gradient-safe forward - 디버그 코드 정리 버전"""
+        """
+        학습 및 디버그에 특화된 forward 함수 (gradient 보장)
+        입력 차원 자동보정, chunk 단위 분리→분류→ANC→합성까지 모든 동작을 통합 수행
+        """
         device = mixed_input.device
         
         # 입력 차원 검증 및 수정
@@ -291,7 +343,7 @@ class ImprovedJointModel(nn.Module):
         if chunk_len > total_length:
             chunk_len = total_length
         
-        # Separation model 처리
+        # 분리 모델 처리
         with torch.amp.autocast('cuda', enabled=False):
             if chunk_len < total_length:
                 # 청크별 분리 처리
@@ -307,13 +359,12 @@ class ImprovedJointModel(nn.Module):
                 sep_output = self.separation_model(mixed_input)
         
         # 2채널로 분리
-        s1_clean = sep_output[:, 0:1, :]  # 방송 채널
-        s2_noise = sep_output[:, 1:2, :]  # 노이즈 채널
+        s1_clean = sep_output[:, 0:1, :]  # 안내방송음 채널
+        s2_noise = sep_output[:, 1:2, :]  # 그 외 소음 채널
 
-        # Classification and Channel Assignment
         classification_results = None
-        broadcast_channel = s1_clean  # 기본값
-        noise_channel = s2_noise      # 기본값
+        broadcast_channel = s1_clean
+        noise_channel = s2_noise
 
         if return_classification and self.broadcast_classifier is not None:
             try:
@@ -323,26 +374,26 @@ class ImprovedJointModel(nn.Module):
                     ch1_for_classification = self._prepare_for_classification(s2_noise)
                     
                     # 2. 각각 분류 (원래 학습된 방식 그대로)
-                    ch0_logits = self.broadcast_classifier(ch0_for_classification)  # [1, 1]
-                    ch1_logits = self.broadcast_classifier(ch1_for_classification)  # [1, 1]
+                    ch0_logits = self.broadcast_classifier(ch0_for_classification)  
+                    ch1_logits = self.broadcast_classifier(ch1_for_classification)
                     
                     # 3. 확률 변환
                     ch0_prob = torch.sigmoid(ch0_logits).mean().item()  # 0~1 사이 확률
                     ch1_prob = torch.sigmoid(ch1_logits).mean().item()  # 0~1 사이 확률
                     
-                    print(f"📊 Ch0 (s1) broadcast prob: {ch0_prob:.3f}")
-                    print(f"📊 Ch1 (s2) broadcast prob: {ch1_prob:.3f}")
+                    print(f"Ch0 (s1) broadcast prob: {ch0_prob:.3f}")
+                    print(f"Ch1 (s2) broadcast prob: {ch1_prob:.3f}")
                     
-                    # 4. 높은 확률을 가진 쪽이 방송
+                    # 4. 높은 확률을 가진 쪽이 안내방송음
                     if ch0_prob > ch1_prob:
-                        print("✅ Ch0 → Broadcast, Ch1 → Noise")
-                        broadcast_channel = s1_clean  # ch0 = 방송
-                        noise_channel = s2_noise      # ch1 = 노이즈
+                        print("Ch0 → Broadcast, Ch1 → Noise")
+                        broadcast_channel = s1_clean  # ch0 = 안내방송음
+                        noise_channel = s2_noise      # ch1 = 그 외 소음
                         is_ch0_broadcast = True
                     else:
-                        print("🔄 Ch0 → Noise, Ch1 → Broadcast")
-                        broadcast_channel = s2_noise  # ch1 = 방송  
-                        noise_channel = s1_clean      # ch0 = 노이즈
+                        print("Ch0 → Noise, Ch1 → Broadcast")
+                        broadcast_channel = s2_noise  # ch1 = 안내방송음
+                        noise_channel = s1_clean      # ch0 = 그 외 소음
                         is_ch0_broadcast = False
                     
                     # 5. 분류 결과 저장
@@ -356,15 +407,15 @@ class ImprovedJointModel(nn.Module):
                     }
                     
             except Exception as e:
-                print(f"⚠️ Classification failed: {e}")
+                print(f"Classification failed: {e}")
                 # 폴백: 기본 할당
                 broadcast_channel = s1_clean
                 noise_channel = s2_noise
                 classification_results = None
 
-        # WaveNet 스타일 ANC 처리
+        # WaveNet-VNNs ANC 처리
         with torch.amp.autocast('cuda', enabled=True):
-            noise_input = noise_channel.squeeze(1)  # [B, T]
+            noise_input = noise_channel.squeeze(1)
             
             # device에 맞게 채널 이동
             pri_channel = self.pri_channel.to(device)
@@ -383,7 +434,7 @@ class ImprovedJointModel(nn.Module):
                     end_idx = min(i + anc_chunk_len, total_length)
                     actual_chunk_len = end_idx - i
                     
-                    chunk = noise_input[:, i:end_idx]  # [B, actual_chunk_len]
+                    chunk = noise_input[:, i:end_idx]
                     
                     if chunk.shape[-1] > 0:
                         # 차원 변환: [B, T] -> [B, 1, T]
@@ -392,13 +443,13 @@ class ImprovedJointModel(nn.Module):
                         # FIR 필터 적용
                         target_chunk = fir_filter(pri_channel, chunk_unsqueezed)
                         
-                        # WaveNet 모델 호출
+                        # WaveNet-VNNs 모델 호출
                         wavenet_output = self.noise_reduction_model(chunk_unsqueezed)
 
                         if torch.isnan(wavenet_output).any() or torch.isinf(wavenet_output).any():
                             wavenet_output = torch.nan_to_num(wavenet_output, nan=0.0, posinf=1.0, neginf=-1.0)
                         
-                        # WaveNet 출력 차원 정규화
+                        # WaveNet-VNNs 출력 차원 정규화
                         if wavenet_output.dim() == 3 and wavenet_output.shape[1] == 1:
                             wavenet_flat = wavenet_output.squeeze(1)
                         elif wavenet_output.dim() == 2:
@@ -486,7 +537,7 @@ class ImprovedJointModel(nn.Module):
                             torch.cuda.empty_cache()
                         
                     except Exception as e:
-                        # 폴백: 첫 번째 청크만 사용
+                        # 폴백: 첫 번째 chunk만 사용
                         first_target = chunks_target[0] if chunks_target else torch.zeros(1, 1, anc_chunk_len, device=device)
                         first_dn = chunks_dn[0] if chunks_dn else torch.zeros(1, 1, anc_chunk_len, device=device)
                         first_en = chunks_en[0] if chunks_en else torch.zeros(1, 1, anc_chunk_len, device=device)
@@ -516,10 +567,9 @@ class ImprovedJointModel(nn.Module):
                     
                     s2_target = fir_filter(pri_channel, noise_unsqueezed)
                     
-                    # WaveNet 모델
                     wavenet_output = self.noise_reduction_model(noise_unsqueezed)
                     
-                    # WaveNet 출력 차원 조정
+                    # WaveNet-VNNs 출력 차원 조정
                     if wavenet_output.dim() == 3:
                         wavenet_flat = wavenet_output.squeeze(1)
                     elif wavenet_output.dim() == 2:
@@ -540,7 +590,6 @@ class ImprovedJointModel(nn.Module):
                     
                     s2_antinoise = fir_filter(sec_channel, nonlinear_for_filter)
                     
-                    # en = dn + target
                     s2_enhanced = s2_antinoise + s2_target
                     
                 except Exception:
@@ -566,6 +615,11 @@ class ImprovedJointModel(nn.Module):
         }
 
     def forward_inference_style(self, mixed_input, chunk_len=None, return_classification=False):
+        """
+          실전 추론/배치 테스트용 forward 함수(gradient X)
+          입력 전체를 chunk 단위로 분리/후처리, 분류기로 채널 역할 할당, ANC 적용, 최종 결과 합성
+        """
+        
         batch_size = mixed_input.shape[0]
         L = mixed_input.shape[-1]
         device = mixed_input.device
@@ -577,7 +631,7 @@ class ImprovedJointModel(nn.Module):
         # 입력 차원 표준화
         mixed_input = standardize_audio_dims(mixed_input)
 
-        # === 1단계: 분리(Separation) ===
+        # 1단계: 분리(Separation)
         max_num_sources = 2
         sep_acc = torch.zeros((batch_size, max_num_sources, L), dtype=torch.float32, device=device)
 
@@ -588,7 +642,6 @@ class ImprovedJointModel(nn.Module):
             # 전처리 (배치 단위)
             mix_t, m_mean, m_std, valid = self.preprocess_sep_chunk(chunk, chunk_len)
             
-            # 분리
             with torch.no_grad():
                 est = self.separation_model(mix_t)
                 est = mixture_consistency.apply(est, mix_t)
@@ -597,11 +650,11 @@ class ImprovedJointModel(nn.Module):
             sep_chunk = self.postprocess_sep_chunk(est, m_mean, m_std, valid)
             sep_acc[:, :, start:start+valid] = sep_chunk
 
-        # === 2단계: 분류 및 채널 할당 ===
+        # 2단계: 분류 및 채널 할당
         classification_results = {}
         
         if self.use_broadcast_classifier and self.broadcast_classifier is not None:
-            # 🔧 배치 단위로 분류 수행 (수정된 방식)
+            # 배치 단위로 분류 수행
             batch_broadcast_channels = []
             batch_noise_channels = []
             batch_classification_info = []
@@ -623,18 +676,18 @@ class ImprovedJointModel(nn.Module):
                     ch0_prob = torch.sigmoid(ch0_logits).mean().item()
                     ch1_prob = torch.sigmoid(ch1_logits).mean().item()
                 
-                print(f"📊 Sample {b}: Ch0 prob={ch0_prob:.3f}, Ch1 prob={ch1_prob:.3f}")
+                print(f"Sample {b}: Ch0 prob={ch0_prob:.3f}, Ch1 prob={ch1_prob:.3f}")
                 
-                # 🎯 확률 비교로 방송/노이즈 채널 결정
+                # 확률 비교로 안내방송음/그 외 소음 채널 결정
                 if ch0_prob > ch1_prob:
-                    print(f"✅ Sample {b}: Ch0 → Broadcast, Ch1 → Noise")
-                    broadcast_channel = sep_acc[b, 0]  # 채널0이 방송
-                    noise_channel = sep_acc[b, 1]      # 채널1이 노이즈
+                    print(f"Sample {b}: Ch0 → Broadcast, Ch1 → Noise")
+                    broadcast_channel = sep_acc[b, 0]  # 채널0이 안내방송음
+                    noise_channel = sep_acc[b, 1]      # 채널1이 그 외 소음
                     is_channel0_broadcast = True
                 else:
-                    print(f"🔄 Sample {b}: Ch0 → Noise, Ch1 → Broadcast")
-                    broadcast_channel = sep_acc[b, 1]  # 채널1이 방송
-                    noise_channel = sep_acc[b, 0]      # 채널0이 노이즈
+                    print(f"Sample {b}: Ch0 → Noise, Ch1 → Broadcast")
+                    broadcast_channel = sep_acc[b, 1]  # 채널1이 안내방송음
+                    noise_channel = sep_acc[b, 0]      # 채널0이 그 외 소음
                     is_channel0_broadcast = False
                 
                 batch_broadcast_channels.append(broadcast_channel)
@@ -649,46 +702,46 @@ class ImprovedJointModel(nn.Module):
                 })
             
             # 배치로 재구성
-            sep_broadcast = torch.stack(batch_broadcast_channels).unsqueeze(1)  # (B, 1, T)
-            sep_noise = torch.stack(batch_noise_channels).unsqueeze(1)          # (B, 1, T)
+            sep_broadcast = torch.stack(batch_broadcast_channels).unsqueeze(1)  
+            sep_noise = torch.stack(batch_noise_channels).unsqueeze(1)        
             
             classification_results = {
                 'batch_info': batch_classification_info,
                 'average_accuracy': None
             }
             
-            print(f"🎯 Classification completed for {batch_size} samples")
+            print(f"Classification completed for {batch_size} samples")
             
         else:
-            print("⚠️ No classifier available, using default assignment")
-            # 분류기 없으면 기본적으로 첫 번째 채널을 방송으로 가정
-            sep_broadcast = sep_acc[:, 0:1]  # (B, 1, T)
-            sep_noise = sep_acc[:, 1:2]      # (B, 1, T)
+            print("No classifier available, using default assignment")
+            # 만약 분류기가 없으면 기본적으로 첫 번째 채널을 안내방송음으로 가정
+            sep_broadcast = sep_acc[:, 0:1]  
+            sep_noise = sep_acc[:, 1:2]      
 
-        # === 3단계: ANC(WaveNet-VNNs) - 분류된 노이즈 채널에 적용 ===
-        print(f"🔧 Applying ANC to classified noise channels...")
+        # 3단계: WaveNet-VNNs(ANC) - 분류된 그 외 소음 채널에 적용
+        print(f"Applying ANC to classified noise channels...")
         batch_enhanced = []
         batch_anti_noise = []
         
         for b in range(batch_size):
-            # 🔧 분류 결과에 따른 노이즈 채널 사용
-            noise_sample = sep_noise[b:b+1]  # (1, 1, T) - 이제 분류된 노이즈 채널!
+            # 분류 결과에 따른 그 외 소음 채널 사용
+            noise_sample = sep_noise[b:b+1]  # 이제 분류된 그 외 소음 채널
             enhanced_sample, anti_sample = self.reduce_noise_like_inference(noise_sample, device)
             batch_enhanced.append(enhanced_sample)
             batch_anti_noise.append(anti_sample)
         
         # 배치로 재구성
-        s2_enhanced = torch.cat(batch_enhanced, dim=0)    # (B, 1, T)
-        s2_antinoise = torch.cat(batch_anti_noise, dim=0) # (B, 1, T)
+        s2_enhanced = torch.cat(batch_enhanced, dim=0)    
+        s2_antinoise = torch.cat(batch_anti_noise, dim=0)
 
-        # === 4단계: 재합성 - 분류된 방송 채널 + ANC 처리된 노이즈 ===
-        print(f"🎛️ Final mixing: classified broadcast + enhanced noise")
+        # 4단계: 재합성 - 분류된 안내방송음 채널 + ANC 처리된 노이즈
+        print(f"Final mixing: classified broadcast + enhanced noise")
         final_mix = sep_broadcast + s2_enhanced
 
         # 결과 반환
         results = {
-            's1_clean': sep_broadcast,        # 분류된 방송 채널
-            's2_noise': sep_noise,            # 분류된 노이즈 채널
+            's1_clean': sep_broadcast,        # 분류된 안내방송음 채널
+            's2_noise': sep_noise,            # 분류된 그 외 소음 채널
             's2_target': None,
             's2_antinoise': s2_antinoise,
             's2_enhanced': s2_enhanced,
@@ -696,7 +749,7 @@ class ImprovedJointModel(nn.Module):
             'sep_acc': sep_acc
         }
 
-        # s2_target 계산 (분류된 노이즈 채널 기반)
+        # s2_target 계산 (분류된 그 외 소음 채널 기반)
         results['s2_target'] = fir_filter(self.pri_filter.to(device), sep_noise)
 
         # 분류 결과 추가
@@ -706,7 +759,10 @@ class ImprovedJointModel(nn.Module):
         return results
     
     def _prepare_for_classification(self, audio):
-        """분류기용 오디오 전처리 (기존 코드를 함수로 분리)"""
+        """
+        BroadcastClassifier 분류기 입력 포맷으로 shape, 길이 변환 및 16,000길이로 패딩/자르기
+        모든 분류 input이 동일 shape 유지하도록 보장
+        """
         # 3차원으로 만들기
         while audio.dim() > 3:
             min_dim_idx = audio.shape.index(min(audio.shape[1:-1]))
@@ -730,18 +786,27 @@ class ImprovedJointModel(nn.Module):
         return audio
 
     def forward_for_training(self, mixed_input, chunk_len=None, return_classification=False):
-        """학습용 forward - 직접 호출"""
+        """
+        학습용 forward 함수
+        내부적으로 _forward_direct_safe 호출
+        """
         return self._forward_direct_safe(mixed_input, chunk_len, return_classification)
 
     def forward(self, mixed_input, chunk_len=None, return_classification=False):
-        """기본 forward - training 모드에 따라 분기"""
+        """
+        PyTorch 모델 forward 메인 진입점
+        self.training에 여부 따라 자동으로 학습/추론 파이프라인 분기
+        """
         if self.training:
             return self.forward_for_training(mixed_input, chunk_len, return_classification)
         else:
             return self.forward_inference_style(mixed_input, chunk_len, return_classification)
 
     def get_trainer_compatible_params(self):
-        """트레이너와 호환되는 파라미터 반환"""
+        """
+        외부 trainer/스크립트와 연동을 위한 핵심 파라미터 반환  
+        FIR 계수 및 eta 값 반환(ANC 파이프라인 하드웨어 연동시 사용)
+        """
         return {
             'pri_channel': self.pri_channel,
             'sec_channel': self.sec_channel,

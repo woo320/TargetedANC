@@ -1,12 +1,16 @@
 """
-모델 관련 유틸리티 함수들 (추론 스타일 지원)
+안내방송음 /그 외 소음 판별 이진 분류기 블록
 """
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 import sys
 import os
-from config.constants import SR
+import numpy as np
+
+
+# WaveNet-VNNs 경로 추가
+sys.path.insert(0, "/content/drive/MyDrive/joint/WaveNet-VNNs-for-ANC/WaveNet_VNNs")
+from loss_function import dBA_Loss, NMSE_Loss
 
 def sisdr_loss(est, target, zero_mean=True, eps=1e-9):
     """SI-SDR loss 계산"""
@@ -28,7 +32,7 @@ def sisdr_loss(est, target, zero_mean=True, eps=1e-9):
     return -sisdr.mean()
 
 def load_sudormrf_weights(model, checkpoint_path):
-    """SudoRM-RF 가중치 로드 유틸리티"""
+    """C-SudoRM-RF++ 가중치 로드"""
     state = torch.load(checkpoint_path, map_location='cpu', weights_only=False)
 
     if 'model_state_dict' in state:
@@ -48,39 +52,34 @@ def load_sudormrf_weights(model, checkpoint_path):
     return model
 
 def load_wavenet_weights(model, checkpoint_path):
-    """WaveNet 가중치 로드 유틸리티"""
+    """WaveNet-VNNs 가중치 로드"""
     state = torch.load(checkpoint_path, map_location='cpu')
     model_state = state['model'] if 'model' in state else state
     model.load_state_dict(model_state)
     return model
 
 def load_broadcast_classifier_weights(model, checkpoint_path):
-    """BroadcastClassifier 가중치 로드 유틸리티"""
+    """BroadcastClassifier 가중치 로드"""
     if not os.path.exists(checkpoint_path):
-        print(f"⚠️ BroadcastClassifier checkpoint not found: {checkpoint_path}")
+        print(f" BroadcastClassifier checkpoint not found: {checkpoint_path}")
         print("   Using randomly initialized weights")
         return model
     
     try:
         state = torch.load(checkpoint_path, map_location='cpu')
         model.load_state_dict(state)
-        print(f"✅ BroadcastClassifier weights loaded from: {checkpoint_path}")
+        print(f" BroadcastClassifier weights loaded from: {checkpoint_path}")
         return model
     except Exception as e:
-        print(f"❌ Error loading BroadcastClassifier weights: {e}")
+        print(f" Error loading BroadcastClassifier weights: {e}")
         print("   Using randomly initialized weights")
         return model
 
 def prepare_audio_for_classifier(audio, window_len=16000):
     """
-    분류기용 오디오 전처리
-    
-    Args:
-        audio: (B, C, T) 형태의 오디오
-        window_len: 분류기 입력 길이
-    
-    Returns:
-        processed_audio: (B, 1, window_len) 형태
+    BroadcastClassifier(분류기) 입력 오디오 전처리
+    입력 shape, 길이 표준화 ((B,1,T) or (B,T)→(B,1,window_len)), 중앙 부분 추출 or zero-padding
+    분류기가 입력받는 고정 길이 텐서로 맞춰줌
     """
     # 차원 조정
     if audio.dim() == 3:
@@ -88,7 +87,7 @@ def prepare_audio_for_classifier(audio, window_len=16000):
     elif audio.dim() == 1:
         audio = audio.unsqueeze(0)  # (1, T)
     
-    batch_size, seq_len = audio.shape
+    seq_len = audio.shape
     
     # 길이 조정
     if seq_len > window_len:
@@ -103,23 +102,27 @@ def prepare_audio_for_classifier(audio, window_len=16000):
     # (B, 1, T) 형태로 변환
     return audio.unsqueeze(1)
 
-# ===== 🔄 분류 손실 함수들 =====
 
+
+# =====  분류 손실 함수들 =====
 def compute_broadcast_classification_loss(classification_output, s1_separated, s2_separated, bce_loss_fn, device):
     """
-    🔧 학습 코드 호환용 통합 분류 손실 함수
-    추론 스타일과 텐서 스타일 모두 지원
+    BroadcastClassifier의 이진 분류 손실 및 정확도 계산
+    분리된 음성/소음의 에너지 비교로 라벨 생성
+    BCE(Binary Cross Entropy) 손실과 예측 확률(>0.5)로 정확도 산출
+    입력: 분류기 출력(딕셔너리 or 텐서), 정답 s1/s2, 손실함수, 디바이스
+    출력: 손실값, 정확도
     """
     if classification_output is None:
         return torch.tensor(0.0, device=device), 0.0
     
-    # 📋 케이스 1: 추론 스타일 (딕셔너리)
+    #케이스 1: 추론 스타일 (딕셔너리)
     if isinstance(classification_output, dict) and 'batch_info' in classification_output:
         return compute_broadcast_classification_loss_inference_style(
             classification_output, s1_separated, s2_separated, bce_loss_fn, device
         )
     
-    # 📋 케이스 2: 텐서 스타일 (기존 방식)
+    #케이스 2: 텐서 스타일 (기존 방식)
     elif hasattr(classification_output, 'shape') and hasattr(classification_output, 'dim'):
         try:
             # 타겟 생성: s1과 s2의 에너지 비교
@@ -141,30 +144,20 @@ def compute_broadcast_classification_loss(classification_output, s1_separated, s
             return classification_loss, accuracy
             
         except Exception as e:
-            print(f"⚠️ Tensor-style classification loss calculation failed: {e}")
+            print(f" Tensor-style classification loss calculation failed: {e}")
             return torch.tensor(0.0, device=device), 0.0
     
-    # 📋 케이스 3: 알 수 없는 형식
     else:
-        print(f"⚠️ Unknown classification output type: {type(classification_output)}")
+        print(f" Unknown classification output type: {type(classification_output)}")
         return torch.tensor(0.0, device=device), 0.0
 
 def compute_broadcast_classification_loss_inference_style(
     classification_results, s1_target, s2_target, bce_loss_fn, device
 ):
     """
-    추론 방식의 분류 손실 계산
-    
-    Args:
-        classification_results: joint model의 분류 결과
-        s1_target: Ground truth s1 (방송)
-        s2_target: Ground truth s2 (소음)
-        bce_loss_fn: BCEWithLogitsLoss
-        device: torch device
-    
-    Returns:
-        classification_loss: 분류 손실
-        accuracy: 정확도
+    추론(딕셔너리 형태) 분류 결과에 대한 BCE 손실, 정확도 계산
+    확률→logit 변환, 각 채널별로 정답 라벨 지정(s1: 1, s2: 0)
+    평균 손실과 batch accuracy 반환
     """
     if 'batch_info' not in classification_results:
         return torch.tensor(0.0, device=device), 0.0
@@ -180,8 +173,8 @@ def compute_broadcast_classification_loss_inference_style(
         chan0_prob = info['mask_chan0']  # 채널0의 방송 확률
         chan1_prob = info['mask_chan1']  # 채널1의 방송 확률
         
-        # 확률을 logit으로 변환 (안전한 방법)
-        chan0_prob = max(0.001, min(0.999, chan0_prob))  # 클리핑
+        # 확률을 logit으로 변환
+        chan0_prob = max(0.001, min(0.999, chan0_prob))
         chan1_prob = max(0.001, min(0.999, chan1_prob))
         
         chan0_logit = torch.log(torch.tensor(chan0_prob / (1 - chan0_prob), device=device))
@@ -209,14 +202,8 @@ def compute_broadcast_classification_loss_inference_style(
 
 def compute_classification_reward_penalty(classification_results, device):
     """
-    분류 정확도에 따른 보상/페널티 계산
-    
-    Args:
-        classification_results: joint model의 분류 결과
-        device: torch device
-    
-    Returns:
-        reward_penalty: 보상(음수)/페널티(양수) 값
+    분류 결과에 따른 보상/페널티 산출(보조 손실용)
+    정답 예측 시 보상(-0.1), 오답시 페널티(+0.5)
     """
     if not isinstance(classification_results, dict) or 'batch_info' not in classification_results:
         return torch.tensor(0.0, device=device)
@@ -234,16 +221,20 @@ def compute_classification_reward_penalty(classification_results, device):
         correct_classification = (chan0_prob > chan1_prob)
         
         if correct_classification:
-            total_penalty -= 0.1  # 작은 보상
+            total_penalty -= 0.1
         else:
-            total_penalty += 0.5   # 큰 페널티
+            total_penalty += 0.5
     
     return torch.tensor(total_penalty / batch_size, device=device)
 
-# ===== 기존 유틸리티 함수들 =====
+# 기존 유틸리티 함수들
 
 def compute_anc_losses(s2_enhanced, s2_target, dba_loss_fn, nmse_loss_fn, device):
-    """ANC 손실 계산 유틸리티"""
+    """
+    ANC 결과 신호에 대한 loss(dBA, NMSE) 계산
+    dBA: 소리의 청감 특성 반영 손실, NMSE: 정규화된 평균 제곱 오차
+    WaveNet-VNNs 저감 결과의 정량적 성능 평가/학습에 활용
+    """
     try:
         s2_enhanced_flat = s2_enhanced.squeeze(1)
         s2_target_flat = s2_target.squeeze(1)
@@ -257,29 +248,32 @@ def compute_anc_losses(s2_enhanced, s2_target, dba_loss_fn, nmse_loss_fn, device
     return anc_dba_loss, anc_nmse_loss
 
 def compute_loss_weights(use_dynamic_mix=False):
-    """손실 가중치 계산"""
+    """
+    파이프라인 전체 손실 가중치 설정
+    분리/저감/합성 등 여러 loss의 가중치를 상황(실험목적)에 맞게 배분
+    """
     if use_dynamic_mix:
-        # SudoRM-RF: 분리 품질이 더 중요
+        # C-SudoRM-RF++: 분리 중심
         return {
-            'final_quality': 0.25,     # 25%
-            'anc_total': 0.35,         # 35%
-            's1_separation': 0.3,      # 30% (증가)
-            'antinoise_constraint': 0.1 # 10%
+            'final_quality': 0.25,   
+            'anc_total': 0.35,       
+            's1_separation': 0.3,
+            'antinoise_constraint': 0.1
         }
     else:
         # 기존 pre-mixed: ANC 중심
         return {
-            'final_quality': 0.3,      # 30%
-            'anc_total': 0.4,          # 40%
-            's1_separation': 0.2,      # 20%
-            'antinoise_constraint': 0.1 # 10%
+            'final_quality': 0.3,     
+            'anc_total': 0.4,          
+            's1_separation': 0.2,     
+            'antinoise_constraint': 0.1
         }
 
 def create_loss_functions(device, fs=16000, nfft=512):
-    """손실 함수들 생성"""
-    # WaveNet 경로 추가
-    sys.path.insert(0, "/content/drive/MyDrive/joint/WaveNet-VNNs-for-ANC/WaveNet_VNNs")
-    from loss_function import dBA_Loss, NMSE_Loss
+    """
+    dBA, NMSE 등 WaveNet-VNNs 논문 기반 손실 함수 객체 생성
+    """
+    
     
     dba_loss = dBA_Loss(fs=fs, nfft=nfft, f_up=fs/2).to(device)
     nmse_loss = NMSE_Loss().to(device)
@@ -287,7 +281,7 @@ def create_loss_functions(device, fs=16000, nfft=512):
     return dba_loss, nmse_loss
 
 def setup_optimizer_groups(separation_model, noise_model, eta_param, config):
-    """옵티마이저 파라미터 그룹 설정"""
+    """분리/저감/eta 파라미터별 별도 학습률 등 옵티마이저 그룹 구성"""
     separation_params = list(separation_model.parameters())
     noise_params = list(noise_model.parameters())
     eta_params = [eta_param] if eta_param is not None else []
@@ -303,7 +297,10 @@ def setup_optimizer_groups(separation_model, noise_model, eta_param, config):
     return param_groups
 
 def get_training_stages(total_epochs):
-    """학습 단계 정의"""
+    """
+    학습 전체를 세 단계로 구분 (초기 적응, 안정화, 미세수렴)
+    각 단계별 에폭 구간, 설명 문자열 포함
+    """
     return {
         "Initial Adaptation": {
             "range": f"1-{min(3, total_epochs//3)}",
@@ -329,8 +326,10 @@ def get_current_stage(epoch, total_epochs):
         return "Fine Convergence"
 
 def ensure_audio_length(arr, target_len):
-    """오디오 길이 보정 유틸리티"""
-    import numpy as np
+    """
+    오디오 배열 길이 보정
+    넘파이 배열을 타겟 길이에 맞게 자르거나 0으로 패딩
+    """
     
     if isinstance(arr, np.ndarray) and arr.ndim > 0:
         return arr[:target_len] if len(arr) >= target_len else np.pad(arr, (0, target_len - len(arr)), 'constant')
@@ -338,8 +337,10 @@ def ensure_audio_length(arr, target_len):
         return np.full(target_len, float(arr) if np.isscalar(arr) else 0.0)
 
 def normalize_audio_for_save(audio_array, target_db=-20):
-    """저장용 오디오 정규화"""
-    import numpy as np
+    """
+    오디오 저장용 정규화
+    wave파일 등으로 저장하기 전에 오디오 볼륨 맞추기
+    """
     
     if isinstance(audio_array, torch.Tensor):
         audio_array = audio_array.squeeze().cpu().numpy()
@@ -355,39 +356,37 @@ def normalize_audio_for_save(audio_array, target_db=-20):
         return audio_array
 
 def check_overfitting(train_metric, val_metric, threshold=1.3):
-    """오버피팅 체크 (음수 손실 고려)"""
+    """오버피팅 체크 (음수 손실 기준) 학습/검증 성능 차이 임계값 초과 시 True 반환"""
     return abs(train_metric) > abs(val_metric) * threshold
 
 def calculate_snr_improvement(input_audio, enhanced_audio, eps=1e-9):
-    """SNR 개선도 계산"""
+    """SNR(신호 대 잡음비) 개선도 계산"""
     input_power = torch.mean(input_audio ** 2)
     enhanced_power = torch.mean(enhanced_audio ** 2)
     snr_improvement = 10 * torch.log10(enhanced_power / (input_power + eps))
     return snr_improvement.item()
 
 def format_memory_info(allocated_gb, reserved_gb, total_gb=None):
-    """메모리 정보 포맷팅"""
+    """메모리 사용량 등 정보 포맷팅 문자열 반환"""
     info = f"{allocated_gb:.1f}GB allocated, {reserved_gb:.1f}GB reserved"
     if total_gb:
         info += f" (Total: {total_gb:.1f}GB)"
     return info
 
 def setup_cuda_environment():
-    """CUDA 환경 최적화 설정"""
-    import os
+    """CUDA 성능 최적화 및 결정론적 환경 설정"""
     
     if torch.cuda.is_available():
         torch.backends.cudnn.benchmark = False
         torch.backends.cudnn.deterministic = True
         
-        # 효율적인 메모리 할당 전략
         os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:256,expandable_segments:True'
         
         return True
     return False
 
 def get_device_info():
-    """디바이스 정보 반환"""
+    """현재 사용중인 디바이스(GPU/CPU) 이름 및 전체 메모리 반환"""
     if torch.cuda.is_available():
         device_name = torch.cuda.get_device_name()
         total_memory = torch.cuda.get_device_properties(0).total_memory / 1e9
