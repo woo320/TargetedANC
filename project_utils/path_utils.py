@@ -1,51 +1,52 @@
-"""
-Training용 동적믹스 + Validation용 premix 지원 경로 유틸리티
-"""
 import os
 
 def setup_mixed_data_directories(base_dir="/content/drive/MyDrive/final_data"):
-    """Training용 동적믹스 + Validation용 premix 디렉토리 구조 생성"""
+    """
+    [역할]
+    Mix 데이터 디렉토리 구조 생성
+    - Training: 동적 믹싱용 (spk1, spk2)
+    - Validation/Test: Pre-mixed용 (mixtures, spk1, spk2)
+    """
     
-    # Training: 동적 믹스용
     train_subdirs = ['spk1', 'spk2']
     
-    # Validation/Test: Pre-mixed용  
-    val_test_subdirs = ['mixtures', 'spk1', 'spk2']
+    val_test_subdirs = ['mixtures', 'spk1', 'spk2'] # mixtures : 사전 믹싱된 파일
     
     created_dirs = []
 
-    # Training 디렉토리
     for subdir in train_subdirs:
         dir_path = os.path.join(base_dir, 'train', subdir)
         os.makedirs(dir_path, exist_ok=True)
         created_dirs.append(dir_path)
     
-    # Validation/Test 디렉토리
     for split in ['val', 'test']:
         for subdir in val_test_subdirs:
             dir_path = os.path.join(base_dir, split, subdir)
             os.makedirs(dir_path, exist_ok=True)
             created_dirs.append(dir_path)
 
-    print("📁 Created mixed directory structure:")
-    print("📂 TRAINING (Dynamic Mix Only):")
+    print("혼합 디렉토리 구조 생성 완료:")
+    print("TRAINING (동적 믹싱 전용):")
     for subdir in train_subdirs:
-        print(f"   ✅ /train/{subdir}/")
+        print(f"   /train/{subdir}/")
     
-    print("📂 VALIDATION/TEST (Pre-mixed Only):")
+    print("VALIDATION/TEST (Pre-mixed 전용):")
     for split in ['val', 'test']:
         for subdir in val_test_subdirs:
-            print(f"   ✅ /{split}/{subdir}/")
+            print(f"   /{split}/{subdir}/")
 
-    print(f"\n💡 Usage:")
-    print(f"   🎵 Training: Put spk1/spk2 files in /train/spk1/, /train/spk2/")
-    print(f"   📊 Validation: Put premixed files in /val/mixtures/, /val/spk1/, etc.")
+    print(f"\n사용 방법:")
+    print(f"   Training: spk1/spk2 파일을 /train/spk1/, /train/spk2/에 저장")
+    print(f"   Validation: 믹싱된 파일을 /val/mixtures/, /val/spk1/ 등에 저장")
 
     return created_dirs
 
 def check_training_data(base_dir="/content/drive/MyDrive/final_data"):
-    """Training용 동적 믹스 데이터 확인"""
-    print(f"🔍 Checking TRAINING data (dynamic mix) in: {base_dir}/train/")
+    """
+    [역할] spk1, spk2에 파일들이 있는지 확인
+    """
+
+    print(f"TRAINING 데이터 확인 (동적 믹싱용): {base_dir}/train/")
     
     train_subdirs = ['spk1', 'spk2']
     total_files = 0
@@ -57,29 +58,32 @@ def check_training_data(base_dir="/content/drive/MyDrive/final_data"):
         if os.path.exists(dir_path):
             wav_files = [f for f in os.listdir(dir_path) if f.endswith('.wav')]
             file_count = len(wav_files)
-            total_files += file_count
+            total_files += file_count   # .wav 파일 개수 확인
             
             if file_count > 0:
                 has_training_data = True
             
-            status = "✅" if file_count > 0 else "⚠️"
-            print(f"   {status} train/{subdir}: {file_count} files")
+            status = "OK" if file_count > 0 else "FAIL"
+            print(f"   {status} train/{subdir}: {file_count}개 파일")
             
             if file_count > 0:
                 sample_files = wav_files[:3]
                 for i, filename in enumerate(sample_files):
                     print(f"      {i+1}. {filename}")
                 if file_count > 3:
-                    print(f"      ... and {file_count-3} more")
+                    print(f"      ... 외 {file_count-3}개 더")
         else:
-            print(f"   ❌ train/{subdir}: Directory not found")
+            print(f"   train/{subdir}: 디렉토리 없음")
     
-    print(f"📊 Training files: {total_files}")
+    print(f"Training 파일 총 개수: {total_files}")
     return has_training_data
 
 def check_validation_data(base_dir="/content/drive/MyDrive/final_data"):
-    """Validation용 pre-mixed 데이터 확인"""
-    print(f"🔍 Checking VALIDATION data (pre-mixed) in: {base_dir}/val/")
+    """
+    [역할] mixtures, spk1, spk2에 파일들이 있는지 확인
+    """
+
+    print(f"VALIDATION 데이터 확인 (pre-mixed용): {base_dir}/val/")
     
     val_subdirs = ['mixtures', 'spk1', 'spk2']
     total_files = 0
@@ -91,57 +95,60 @@ def check_validation_data(base_dir="/content/drive/MyDrive/final_data"):
         if os.path.exists(dir_path):
             wav_files = [f for f in os.listdir(dir_path) if f.endswith('.wav')]
             file_count = len(wav_files)
-            total_files += file_count
+            total_files += file_count   # .wav 파일 개수 확인
             
             if file_count > 0:
                 has_validation_data = True
             
-            status = "✅" if file_count > 0 else "⚠️"
-            print(f"   {status} val/{subdir}: {file_count} files")
+            status = "OK" if file_count > 0 else "FAIL"
+            print(f"   {status} val/{subdir}: {file_count}개 파일")
             
             if file_count > 0:
                 sample_files = wav_files[:3]
                 for i, filename in enumerate(sample_files):
                     print(f"      {i+1}. {filename}")
                 if file_count > 3:
-                    print(f"      ... and {file_count-3} more")
+                    print(f"      ... 외 {file_count-3}개 더")
         else:
-            print(f"   ❌ val/{subdir}: Directory not found")
+            print(f"   val/{subdir}: 디렉토리 없음")
     
-    print(f"📊 Validation files: {total_files}")
+    print(f"Validation 파일 총 개수: {total_files}")
     return has_validation_data
 
 def auto_detect_data_type(base_dir="/content/drive/MyDrive/final_data"):
-    """데이터 타입 자동 감지 - Training(동적) + Validation(premix) 전용"""
-    print(f"🕵️ Auto-detecting data structure in: {base_dir}")
+    """
+    [역할]
+    데이터 타입 자동 감지
+    전체 데이터 구조를 분석하여 학습 가능 여부를 판단
+    """
+
+    print(f"데이터 구조 자동 감지: {base_dir}")
     print("="*60)
 
-    # Training 데이터 확인 (동적믹스용)
     has_training = check_training_data(base_dir)
     print("\n" + "-"*40)
     
-    # Validation 데이터 확인 (premix용)
     has_validation = check_validation_data(base_dir)
     
     print("\n" + "="*60)
-    print(f"🎯 Detection Results:")
-    print(f"   Training (spk1/spk2 for dynamic mix): {'✅' if has_training else '❌'}")
-    print(f"   Validation (mixtures/spk1/spk2): {'✅' if has_validation else '❌'}")
+    print(f"감지 결과:")
+    print(f"   Training (spk1/spk2 동적 믹싱용): {'OK' if has_training else 'FAIL'}")
+    print(f"   Validation (mixtures/spk1/spk2): {'OK' if has_validation else 'FAIL'}")
 
     if has_training and has_validation:
-        print(f"\n💡 Perfect! Ready for training:")
-        print(f"   🎵 Training will use dynamic mixing (spk1 + spk2)")
-        print(f"   📊 Validation will use pre-mixed data")
+        print(f"\n 완벽! 학습 준비 완료:")
+        print(f"   Training은 동적 믹싱 사용 (spk1 + spk2)")
+        print(f"   Validation은 pre-mixed 데이터 사용")
         return "ready"
     elif has_training:
-        print(f"\n⚠️ Training data found, but no validation data")
-        print(f"   💡 Training possible, but no validation available")
+        print(f"\nTraining 데이터만 발견, Validation 데이터 없음")
+        print(f"   학습은 가능하지만 검증 불가")
         return "training_only"
     elif has_validation:
-        print(f"\n⚠️ Only validation data found") 
-        print(f"   💡 Need training data (spk1/spk2 folders)")
+        print(f"\nValidation 데이터만 발견") 
+        print(f"   Training 데이터 필요 (spk1/spk2 폴더)")
         return "validation_only"
     else:
-        print(f"\n❌ No suitable data found!")
-        print(f"💡 Please run setup_mixed_data_directories() to create structure")
+        print(f"\n적절한 데이터를 찾을 수 없음!")
+        print(f"setup_mixed_data_directories() 실행하여 구조 생성")
         return "none"
