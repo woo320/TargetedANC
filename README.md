@@ -9,3 +9,6 @@
 ```
 pip install -r requirements.txt
 ```
+
+
+# 실행
