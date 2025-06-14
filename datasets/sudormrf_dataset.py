@@ -66,9 +66,9 @@ class SudoRMRFDynamicMixDataset(Dataset):
         try:
             audio, _ = librosa.load(audio_path, sr=self.SR, mono=True, dtype=np.float32)
             
-            # 🔧 길이 정규화: 패딩 또는 자르기
+            # 길이 정규화
             if len(audio) < target_length:
-                # 짧으면 패딩 (반복 패딩으로 더 자연스럽게)
+                # 짧으면 패딩
                 if len(audio) > 0:
                     repeat_times = (target_length // len(audio)) + 1
                     audio_repeated = np.tile(audio, repeat_times)
@@ -76,20 +76,20 @@ class SudoRMRFDynamicMixDataset(Dataset):
                 else:
                     audio = np.zeros(target_length, dtype=np.float32)
             else:
-                # 길면 랜덤 크롭 (학습 데이터 다양성 증가)
+                # 길면 랜덤으로 자름
                 if len(audio) > target_length:
                     start_idx = np.random.randint(0, len(audio) - target_length + 1)
                     audio = audio[start_idx:start_idx + target_length]
             
-            # 🔧 최종 길이 검증
+            # 최종 길이 검증
             if len(audio) != target_length:
-                print(f"⚠️ Length mismatch after processing: {len(audio)} vs {target_length}")
-                audio = np.resize(audio, target_length)  # 강제 리사이즈
+                print(f"Length mismatch after processing: {len(audio)} vs {target_length}")
+                audio = np.resize(audio, target_length)
             
             return audio
             
         except Exception as e:
-            print(f"❌ Failed to load audio from {audio_path}: {e}")
+            print(f"Failed to load audio from {audio_path}: {e}")
             return np.zeros(target_length, dtype=np.float32)
 
     def __getitem__(self, idx):
@@ -101,11 +101,11 @@ class SudoRMRFDynamicMixDataset(Dataset):
             s1_path = os.path.join(self.s1_dir, s1_filename)
             s2_path = os.path.join(self.s2_dir, s2_filename)
 
-            # 🔧 고정 길이로 오디오 로드
+            # 고정 길이로 오디오 로드
             s1_audio = self._load_and_normalize_audio(s1_path, self.target_samples)
             s2_audio = self._load_and_normalize_audio(s2_path, self.target_samples)
             
-            # 🔧 최종 검증
+            # 최종 검증
             assert len(s1_audio) == self.target_samples, f"S1 length mismatch: {len(s1_audio)} vs {self.target_samples}"
             assert len(s2_audio) == self.target_samples, f"S2 length mismatch: {len(s2_audio)} vs {self.target_samples}"
 
@@ -123,7 +123,7 @@ class SudoRMRFDynamicMixDataset(Dataset):
             }
 
         except Exception as e:
-            print(f"❌ Error creating SudoRM-RF mix for index {idx}: {e}")
+            print(f"Error creating SudoRM-RF mix for index {idx}: {e}")
             # 더미 데이터 (고정 길이)
             dummy_sources = np.zeros((2, self.target_samples), dtype=np.float32)
             return {

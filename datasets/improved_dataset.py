@@ -20,7 +20,7 @@ class ImprovedAudioDataset(Dataset):
             # 하위호환성을 위한 fallback
             self.SR = DEFAULT_SR
         
-        # 🔧 고정 길이 설정
+        # 고정 길이 설정
         self.target_samples = int(self.max_duration * self.SR)
 
         self.split_dir = os.path.join(dataset_root, split)
@@ -50,7 +50,7 @@ class ImprovedAudioDataset(Dataset):
         try:
             audio, _ = librosa.load(audio_path, sr=self.SR, mono=True, dtype=np.float32)
             
-            # 🔧 길이 정규화
+            # 길이 정규화
             if len(audio) < target_length:
                 # 짧으면 패딩
                 if len(audio) > 0:
@@ -60,7 +60,7 @@ class ImprovedAudioDataset(Dataset):
                 else:
                     audio = np.zeros(target_length, dtype=np.float32)
             else:
-                # 길면 크롭
+                # 길면 자름
                 if len(audio) > target_length:
                     start_idx = np.random.randint(0, len(audio) - target_length + 1)
                     audio = audio[start_idx:start_idx + target_length]
@@ -79,7 +79,7 @@ class ImprovedAudioDataset(Dataset):
         mix_filename = self.file_list[idx]  # "mix_reverb_000.wav"
 
         try:
-            # 🔧 인덱스 추출 및 파일명 생성
+            # 인덱스 추출 및 파일명 생성
             # "mix_reverb_000.wav" → "000"
             base_idx = mix_filename.split('_')[-1].replace('.wav', '')
             
@@ -92,12 +92,12 @@ class ImprovedAudioDataset(Dataset):
             s1_path = os.path.join(self.s1_dir, s1_filename)           # spk1/spk1_reverb_000.wav
             s2_path = os.path.join(self.s2_dir, s2_filename)           # spk2/spk2_reverb_000.wav
 
-            # 🔧 고정 길이로 모든 오디오 로드
+            # 고정 길이로 모든 오디오 로드
             input_audio = self._load_and_normalize_audio(input_path, self.target_samples)
             s1_target = self._load_and_normalize_audio(s1_path, self.target_samples)
             s2_target = self._load_and_normalize_audio(s2_path, self.target_samples)
             
-            # 🔧 최종 검증
+            # 최종 검증
             assert len(input_audio) == self.target_samples
             assert len(s1_target) == self.target_samples
             assert len(s2_target) == self.target_samples
@@ -112,7 +112,7 @@ class ImprovedAudioDataset(Dataset):
             }
 
         except Exception as e:
-            print(f"❌ Error loading {mix_filename}: {e}")
+            print(f"Error loading {mix_filename}: {e}")
             # 더미 데이터 (고정 길이)
             return {
                 'input': torch.zeros(self.target_samples),
