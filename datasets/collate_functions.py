@@ -123,7 +123,6 @@ def sudormrf_dynamic_mix_collate_fn(batch, config=None):
     }
 
 def improved_collate_fn(batch, config=None):
-    """개선된 배치 콜레이트 (기존 방식, 정리 버전)"""
     # config에서 sample_rate 가져오기
     if config is not None:
         SR = config.get('sample_rate', 16000)
@@ -133,7 +132,7 @@ def improved_collate_fn(batch, config=None):
         SR = DEFAULT_SR
         max_duration = 15.0
     
-    # 모든 아이템의 길이 확인
+    # 배치 길이 확인
     all_lengths = []
     for item in batch:
         input_length = len(item['input'])
@@ -153,7 +152,6 @@ def improved_collate_fn(batch, config=None):
 
     for i, item in enumerate(batch):
         try:
-            # 각 아이템의 길이 통일
             input_audio = item['input']
             s1_audio = item['separation_targets']['s1']
             s2_audio = item['separation_targets']['s2']
@@ -180,13 +178,6 @@ def improved_collate_fn(batch, config=None):
             batch_s1.append(s1_padded)
             batch_s2.append(s2_padded)
             batch_filenames.append(item['filename'])
-            
-        except Exception:
-            # 더미 데이터로 대체
-            batch_input.append(torch.zeros(target_length))
-            batch_s1.append(torch.zeros(target_length))
-            batch_s2.append(torch.zeros(target_length))
-            batch_filenames.append(f"error_{i}.wav")
 
     return {
         'input': torch.stack(batch_input),

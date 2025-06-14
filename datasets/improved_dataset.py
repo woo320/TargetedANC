@@ -7,7 +7,6 @@ from config.constants import SR
 from config.constants import DEFAULT_SR
 
 class ImprovedAudioDataset(Dataset):
-    """개선된 오디오 데이터셋 (기존 방식, 길이 일관성 보장)"""
     def __init__(self, dataset_root, split='train', max_samples=None, max_duration=15.0, config=None):
         self.dataset_root = dataset_root
         self.split = split
@@ -17,7 +16,6 @@ class ImprovedAudioDataset(Dataset):
         if config is not None:
             self.SR = config.get('sample_rate', 16000)
         else:
-            # 하위호환성을 위한 fallback
             self.SR = DEFAULT_SR
         
         # 고정 길이 설정
@@ -35,18 +33,18 @@ class ImprovedAudioDataset(Dataset):
 
         if max_samples and len(all_files) > max_samples:
             self.file_list = all_files[:max_samples]
-            print(f"📂 Limited {split} dataset: {len(self.file_list)}/{len(all_files)} files")
+            print(f"Limited {split} dataset: {len(self.file_list)}/{len(all_files)} files")
         else:
             self.file_list = all_files
-            print(f"📂 Loaded {split} dataset: {len(self.file_list)} files")
+            print(f"Loaded {split} dataset: {len(self.file_list)} files")
         
-        print(f"   Target length: {self.target_samples} samples ({self.max_duration}s at {self.SR}Hz)")
+        print(f"Target length: {self.target_samples} samples ({self.max_duration}s at {self.SR}Hz)")
 
     def __len__(self):
         return len(self.file_list)
 
+    # 오디오 로드 및 고정 길이 정규화
     def _load_and_normalize_audio(self, audio_path, target_length):
-        """오디오 로드 및 고정 길이로 정규화"""
         try:
             audio, _ = librosa.load(audio_path, sr=self.SR, mono=True, dtype=np.float32)
             
@@ -65,14 +63,14 @@ class ImprovedAudioDataset(Dataset):
                     start_idx = np.random.randint(0, len(audio) - target_length + 1)
                     audio = audio[start_idx:start_idx + target_length]
             
-            # 최종 길이 검증
+            # 최종 길이 검증 후 리턴
             if len(audio) != target_length:
                 audio = np.resize(audio, target_length)
             
             return audio
             
         except Exception as e:
-            print(f"❌ Failed to load audio from {audio_path}: {e}")
+            print(f"Failed to load audio from {audio_path}: {e}")
             return np.zeros(target_length, dtype=np.float32)
 
     def __getitem__(self, idx):

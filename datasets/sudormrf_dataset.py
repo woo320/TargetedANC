@@ -19,7 +19,6 @@ class SudoRMRFDynamicMixDataset(Dataset):
         if config is not None:
             self.SR = config.get('sample_rate', 16000)
         else:
-            # 하위호환성을 위한 fallback
             self.SR = DEFAULT_SR
         
         # 15초 길이 보장
@@ -53,10 +52,10 @@ class SudoRMRFDynamicMixDataset(Dataset):
             min_files = max_samples
 
         self.num_samples = min_files
-        print(f"📂 SudoRM-RF DynamicMix {split} dataset: {self.num_samples} pairs")
-        print(f"   Target length: {self.target_samples} samples ({self.max_duration}s at {self.SR}Hz)")
-        print(f"   S1 files: {len(self.s1_files)}, S2 files: {len(self.s2_files)}")
-        print(f"   Online augmentation: {use_online_augment}")
+        print(f"SudoRM-RF DynamicMix {split} dataset: {self.num_samples} pairs")
+        print(f"Target length: {self.target_samples} samples ({self.max_duration}s at {self.SR}Hz)")
+        print(f"S1 files: {len(self.s1_files)}, S2 files: {len(self.s2_files)}")
+        print(f"Online augmentation: {use_online_augment}")
 
     def __len__(self):
         return self.num_samples
@@ -81,7 +80,7 @@ class SudoRMRFDynamicMixDataset(Dataset):
                     start_idx = np.random.randint(0, len(audio) - target_length + 1)
                     audio = audio[start_idx:start_idx + target_length]
             
-            # 최종 길이 검증
+            # 최종 길이 검증 후 리턴
             if len(audio) != target_length:
                 print(f"Length mismatch after processing: {len(audio)} vs {target_length}")
                 audio = np.resize(audio, target_length)
