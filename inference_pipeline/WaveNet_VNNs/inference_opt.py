@@ -1,4 +1,5 @@
 """
+출처: https://github.com/Lu-Baihh/WaveNet-VNNs-for-ANC/blob/main/WaveNet_VNNs/infer.py => 이를 변경 및 수정
 WaveNet-VNNs 추론 스크립트
 - 학습된 모델로 test s2(noise) 파일에 대해 ANC(저감) 및 anti-noise 신호를 추론.
 - dBA, NMSE, 처리속도(ms/sec) 등 성능 지표를 파일별·전체 평균으로 출력.
