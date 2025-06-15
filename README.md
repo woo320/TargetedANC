@@ -28,3 +28,20 @@ pip install -r requirements.txt
 ```bash
 !!python /content/drive/MyDrive/inference_pipeline/C_SudoRM_RF/c_sudormrf_inference.py -ckpt /content/drive/MyDrive/inference_pipeline/C_SudoRM_RF/causal_best.pt --input_dir 'your_data' --output_dir 'your_root'
 ```
+
+### Audio Segment Classifier(ASC) Train Code
+```bash
+!python /content/drive/MyDrive/inference_pipeline/ASC/ASC.py \
+    --train_s1_dir /content/drive/MyDrive/final_data/train/spk1 \
+    --train_s2_dir /content/drive/MyDrive/final_data/train/spk2 \
+    --val_s1_dir     /content/drive/MyDrive/final_data/val/spk1 \
+    --val_s2_dir     /content/drive/MyDrive/final_data/val/spk2 \
+    --test_s1_dir    /content/drive/MyDrive/final_data/test/spk1 \
+    --test_s2_dir    /content/drive/MyDrive/final_data/test/spk2 \
+    --save_path /content/drive/MyDrive/inference_pipeline/ASC/checkpoint/best.pth \
+    --sr 16000 \
+    --window_len 16000 \
+    --batch_size 16 \
+    --lr 1e-4 \
+    --epochs 15
+```
