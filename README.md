@@ -10,5 +10,6 @@
 pip install -r requirements.txt
 ```
 
+실행 환경: Pyhton: 3.11.13 / Torch: 2.6.0 / Torchaudio: 2.6.0 / librosa: 0.11.0 / Soundfile: 0.13.1
 
 # 실행
