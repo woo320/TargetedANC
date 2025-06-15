@@ -1,4 +1,5 @@
 """
+출처: https://github.com/Lu-Baihh/WaveNet-VNNs-for-ANC/blob/main/WaveNet_VNNs/train.py => 이를 변경 및 수정
 WaveNet-VNNs 모델 학습 스크립트 (분산/단일 GPU 모두 지원)
 - 실험 reproducibility를 위한 시드 고정
 - DDP 분산/단일 학습 자동 처리
