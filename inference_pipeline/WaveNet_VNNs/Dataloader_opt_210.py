@@ -1,4 +1,5 @@
 """
+출처: https://github.com/Lu-Baihh/WaveNet-VNNs-for-ANC/blob/main/WaveNet_VNNs/Dataloader.py
 TrainDataset 및 TestDataset
 - 음성 데이터를 지정한 길이와 간격으로 segment 단위로 잘라서
   학습/테스트용 Dataset 객체로 만듦
