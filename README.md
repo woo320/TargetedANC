@@ -48,7 +48,7 @@ pip install -r requirements.txt
   --normalize_audio \
   -cad 0 \
   --n_jobs 4 \
-  -clp 'your_checkpoint_dir'# (미리 빈 폴더 준비)
+  -clp '/your_checkpoint_dir'# (미리 빈 폴더 준비)
 ```
 
 
@@ -56,8 +56,8 @@ pip install -r requirements.txt
 ```bash
 !python /content/drive/MyDrive/inference_pipeline/C_SudoRM_RF/c_sudormrf_inference.py \
   -ckpt /content/drive/MyDrive/inference_pipeline/C_SudoRM_RF/causal_best.pt \
-  --input_dir 'your_data_dir' \
-  --output_dir 'your_output_dir'# (미리 빈 폴더 준비)
+  --input_dir '/your_data_dir' \
+  --output_dir '/your_output_dir'# (미리 빈 폴더 준비)
 ```
 
 
@@ -70,7 +70,7 @@ pip install -r requirements.txt
     --val_s2_dir     /content/drive/MyDrive/final_data/val/spk2 \
     --test_s1_dir    /content/drive/MyDrive/final_data/test/spk1 \
     --test_s2_dir    /content/drive/MyDrive/final_data/test/spk2 \
-    --save_path 'your_checkpoint_dir' \
+    --save_path '/your_checkpoint_dir' \
     --sr 16000 \
     --window_len 16000 \
     --batch_size 16 \
@@ -91,9 +91,9 @@ pip install -r requirements.txt
 !python /content/drive/MyDrive/inference_pipeline/WaveNet_VNNs/inference_opt.py \
   --model-path /content/drive/MyDrive/inference_pipeline/WaveNet_VNNs/model.pth \
   --config /content/drive/MyDrive/inference_pipeline/WaveNet_VNNs/config_opt_210.json \
-  --test-data-dir 'your_data_dir' \
-  --output-enh-dir 'your_denoise_dir'# (미리 빈 폴더 준비) \
-  --output-anti-dir 'your_antinoise_dir'# (미리 빈 폴더 준비)
+  --test-data-dir '/your_data_dir' \
+  --output-enh-dir '/your_denoise_dir'# (미리 빈 폴더 준비) \
+  --output-anti-dir '/your_antinoise_dir'# (미리 빈 폴더 준비)
 ```
 
 
@@ -104,9 +104,9 @@ pip install -r requirements.txt
   --noise_cfg     /content/drive/MyDrive/inference_pipeline/WaveNet_VNNs/config_opt_210.json \
   --noise_ckpt   /content/drive/MyDrive/inference_pipeline/WaveNet_VNNs/model.pth \
   --bcd_ckpt      /content/drive/MyDrive/inference_pipeline/ASC/asc.pth \
-  --input_dir     'your_data_dir' \
-  --sep_out      'your_seperation_dir'# (미리 빈 폴더 준비) \
-  --noise_out       'your_noise_dir'# (미리 빈 폴더 준비) \
-  --denoise_out      'your_denoise_dir'# (미리 빈 폴더 준비) \
-  --anti_out     'your_antinoise_dir'# (미리 빈 폴더 준비) \
-  --final_out   'your_final_dir'# (미리 빈 폴더 준비)
+  --input_dir     '/your_data_dir' \
+  --sep_out      '/your_seperation_dir'# (미리 빈 폴더 준비) \
+  --noise_out       '/your_noise_dir'# (미리 빈 폴더 준비) \
+  --denoise_out      '/your_denoise_dir'# (미리 빈 폴더 준비) \
+  --anti_out     '/your_antinoise_dir'# (미리 빈 폴더 준비) \
+  --final_out   '/your_final_dir'# (미리 빈 폴더 준비)
