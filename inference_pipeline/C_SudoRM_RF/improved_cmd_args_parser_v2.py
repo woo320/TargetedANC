@@ -1,5 +1,6 @@
 """
-실험 인자 파서 - SudoRmRf 및 다양한 데이터셋, 모델, 트레이닝 설정 지원
+출처: https://github.com/etzinis/sudo_rm_rf/blob/master/sudo_rm_rf/dnn/experiments/utils/improved_cmd_args_parser_v2.py => earlystopping parser 추가
+실험 인자 파서
 """
 
 import argparse
