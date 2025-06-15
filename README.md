@@ -20,7 +20,7 @@ pip install -r requirements.txt
 # Inference_Pipeline
 ## **분리, 분류, 저감 모델의 Training과 Inference Command line usage**
 
-### C-SuDoRM-RF++ Train Command
+### C-SuDoRM-RF++ Training Command
 ```bash
 !python /content/drive/MyDrive/inference_pipeline/C_SudoRM_RF/c_sudormrf_train.py \
   --model_type causal \
@@ -62,7 +62,7 @@ pip install -r requirements.txt
 
 ---
 
-### Audio Segment Classifier(ASC) Train Command
+### Audio Segment Classifier(ASC) Training Command
 ```bash
 !python /content/drive/MyDrive/inference_pipeline/ASC/ASC.py \
     --train_s1_dir /content/drive/MyDrive/final_data/train/spk1 \
@@ -81,7 +81,7 @@ pip install -r requirements.txt
 
 ---
 
-### WaveNet-VNNs Train Command
+### WaveNet-VNNs Training Command
 ```bash
 !python /content/drive/MyDrive/inference_pipeline/WaveNet_VNNs/train_opt_210.py \
   --config /content/drive/MyDrive/inference_pipeline/WaveNet_VNNs/cfg_train_opt_210.toml \
