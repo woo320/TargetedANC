@@ -1,6 +1,6 @@
 """!
+출처: https://github.com/etzinis/sudo_rm_rf/blob/master/sudo_rm_rf/dnn/models/causal_improved_sudormrf_v3.py
 @brief 인과적이고 단순화된 SuDO-RM-RF 모델
-
 @author Efthymios Tzinis {etzinis2@illinois.edu}
 @copyright University of Illinois at Urbana-Champaign
 """
