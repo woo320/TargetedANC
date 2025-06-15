@@ -1,9 +1,6 @@
 import os
 import sys
 
-# 프로젝트 경로 설정
-sys.path.insert(0, "/content/drive/MyDrive/joint/code4")
-
 from trainers.sudormrf_trainer import ImprovedJointTrainerWithSudoRMRFMix
 from project_utils.path_utils import auto_detect_data_type
 from config.main_config import *

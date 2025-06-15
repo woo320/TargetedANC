@@ -18,9 +18,9 @@ def main_config():
         'use_online_augment': True,         # 데이터 증강 (학습용)
 
         # 학습 설정
-        'epochs': 20,
+        'epochs': 30,
         'batch_size': 4,
-        'accumulation_steps': 16,
+        'accumulation_steps': 4,
 
         # 학습률 설정
         'separation_lr': 3.5e-5,              # (분리) SudoRM-RF 모델
@@ -88,7 +88,7 @@ def main_config():
         'progress_bar_refresh_rate': 10,    # Progress bar 업데이트 주기
 
         # 그라디언트 및 최적화
-        'max_grad_norm': 0.05,              # 그라디언트 클리핑
+        'max_grad_norm': 1.0,              # 그라디언트 클리핑
         'use_gradient_checkpointing': True, # 그라디언트 체크포인팅
 
         # 데이터 로딩 설정

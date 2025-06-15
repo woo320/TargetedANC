@@ -11,14 +11,6 @@ import soundfile as sf
 import json
 import traceback
 
-# ─── 경로 설정 ─────────────────────────────────────────────────────────
-# 조인트 모델 경로 추가
-sys.path.append('/content/drive/MyDrive/joint/code4')
-# WaveNet-VNNs 모델 경로
-sys.path.append('/content/drive/MyDrive/WaveNet-VNNs-for-ANC/WaveNet_VNNs')
-# sudo_rm_rf 분리 모델 경로
-sys.path.append('/content/drive/MyDrive/sudo_rm_rf')
-
 # ─── 조인트 모델 임포트 ─────────────────────────────────────────────
 from models.joint_model import ImprovedJointModel
 from project_utils.audio_utils import standardize_audio_dims
@@ -42,12 +34,12 @@ def load_joint_model(joint_checkpoint_path, device):
         broadcast_classifier_checkpoint = config.get('broadcast_classifier_checkpoint')
         use_broadcast_classifier = config.get('use_broadcast_classifier', True)
     else:
-        # 기본 경로들
+        # 기본 경로들 (weight 폴더)
         print("No config in checkpoint, using default paths")
-        sudormrf_checkpoint = "/content/drive/MyDrive/joint/weight/.pt"
-        wavenet_checkpoint = "/content/drive/MyDrive/joint/weight/reduction.pth"
-        wavenet_config = "/content/drive/MyDrive/joint/WaveNet-VNNs-for-ANC/WaveNet_VNNs/config_opt_210.json"
-        broadcast_classifier_checkpoint = "/content/drive/MyDrive/joint/weight/classifier.pth"
+        sudormrf_checkpoint = "/weight/separate.pt"
+        wavenet_checkpoint = "/weight/reduction.pth"
+        wavenet_config = "/weight/config_opt_210.json"
+        broadcast_classifier_checkpoint = "/weight/classifier.pth"
         use_broadcast_classifier = True
 
     # 조인트 모델 생성

@@ -25,7 +25,7 @@ class BroadcastClassifier(nn.Module):
         self.fc = nn.Linear(64, 1)  # 최종 이진분류용 logit 출력
 
     def forward(self, x):
-        """입력 차원을 3D(batch, channel, length)로 통일시켜 robust하게 처리"""
+        # 입력 차원을 3D(batch, channel, length)로 통일
         original_shape = x.shape
         # 과한 차원 제거
         while x.dim() > 3:
@@ -43,11 +43,11 @@ class BroadcastClassifier(nn.Module):
         return self.fc(x)  # (batch, 1)
 
     def predict_proba(self, x):
-        """sigmoid 적용 후 확률값 반환 (0: 그 외 소음, 1: 안내방송음)"""
+        # sigmoid 적용 후 확률값 반환 (0: 그 외 소음, 1: 안내방송음)
         logits = self.forward(x)
         return torch.sigmoid(logits)
 
     def predict(self, x, threshold=0.5):
-        """threshold 이상이면 안내방송음(1), 아니면 그 외 소음(0)"""
+        # threshold 이상이면 안내방송음(1), 아니면 그 외 소음(0)
         proba = self.predict_proba(x)
         return (proba >= threshold).float()

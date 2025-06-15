@@ -1,6 +1,3 @@
-"""
-정리된 SudoRM-RF 트레이너 (수정 완료)
-"""
 import os
 import sys
 import time
@@ -12,7 +9,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-# 🔄 SudoRM-RF PIT 손실함수 import
+# SudoRM-RF PIT 손실함수 import
 try:
     from asteroid.losses import PITLossWrapper, pairwise_neg_sisdr
     ASTEROID_AVAILABLE = True
@@ -37,7 +34,6 @@ from project_utils.augmentation import online_augment_sudormrf
 from config.constants import SR
 
 class ImprovedJointTrainerWithSudoRMRFMix:
-    """정리된 SudoRM-RF 조인트 트레이너"""
 
     def __init__(self, config):
         self.config = config
@@ -59,7 +55,7 @@ class ImprovedJointTrainerWithSudoRMRFMix:
             self.writer = SummaryWriter(self.log_path)
 
         pit_status = "with PIT loss" if self.use_pit_loss else "with basic SI-SDR"
-        print(f"🚀 Joint Trainer Mixed Training (Training:Dynamic + Val:Premixed) {pit_status} initialized")
+        print(f"Joint Trainer Mixed Training (Training:Dynamic + Val:Premixed) {pit_status} initialized")
 
     def _setup_paths(self):
         timestamp = datetime.now().strftime("%Y-%m-%d-%Hh%Mm")
@@ -84,7 +80,7 @@ class ImprovedJointTrainerWithSudoRMRFMix:
 
         # 학습 가능한 파라미터 확인
         trainable_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
-        print(f"✅ Model loaded with {trainable_params:,} trainable parameters")
+        print(f"Model loaded with {trainable_params:,} trainable parameters")
 
     def _setup_dataloaders(self):
         """데이터로더 설정 - config를 collate_fn에 전달"""
@@ -107,7 +103,7 @@ class ImprovedJointTrainerWithSudoRMRFMix:
                 elif split == 'test' and self.config.get('limit_test_samples'):
                     max_samples = self.config['limit_test_samples']
 
-                # 🔧 split별로 명확히 구분
+                # split별로 명확히 구분
                 if split == 'train':
                     # Training: 무조건 동적 믹스
                     dataset = SudoRMRFDynamicMixDataset(
@@ -150,7 +146,7 @@ class ImprovedJointTrainerWithSudoRMRFMix:
                 dataloaders[split] = dataloader
 
             except Exception as e:
-                print(f"❌ Failed to create {split} dataloader: {e}")
+                print(f"Failed to create {split} dataloader: {e}")
                 dataloaders[split] = None
 
         self.train_loader = dataloaders['train']
@@ -190,7 +186,7 @@ class ImprovedJointTrainerWithSudoRMRFMix:
 
         self.optimizer = optim.Adam(param_groups)
 
-        # ✅ 수정된 스케줄러 설정
+        # 수정된 스케줄러 설정
         scheduler_params = {
             'mode': 'min',
             'factor': 0.8,                     # 0.7 → 0.8 (덜 급격하게)
@@ -214,7 +210,7 @@ class ImprovedJointTrainerWithSudoRMRFMix:
         
         self.best_val_loss = float('inf')
 
-        # ✅ 수정된 조기 종료 설정
+        # 수정된 조기 종료 설정
         if 'early_stopping_patience' not in self.config or 'min_delta' not in self.config:
             raise ValueError("early_stopping_patience와 min_delta는 config에서 명시적으로 설정해야 합니다!")
 
@@ -292,7 +288,7 @@ class ImprovedJointTrainerWithSudoRMRFMix:
         """추론코드와 동일한 dBA 계산 (차이 방식)"""
         try:
             if target is not None:
-                # 🔧 추론코드와 동일: dBA(enhanced) - dBA(target)
+                # 추론코드와 동일: dBA(enhanced) - dBA(target)
                 signal_power = torch.mean(signal ** 2)
                 target_power = torch.mean(target ** 2)
                 
@@ -343,7 +339,7 @@ class ImprovedJointTrainerWithSudoRMRFMix:
             return nmse_db
             
         except Exception as e:
-            print(f"⚠️ NMSE calculation failed: {e}")
+            print(f"NMSE calculation failed: {e}")
             return torch.mean((signal - target) ** 2)
     
     def _compute_losses(self, outputs, batch):
@@ -411,7 +407,7 @@ class ImprovedJointTrainerWithSudoRMRFMix:
                 classification_accuracy = 0.0
                 accuracy_weight = 1.0
         
-        # 🔧 batch 타입으로 Training/Validation 구분
+        # batch 타입으로 Training/Validation 구분
         if 'sources' in batch:
             # Training: SudoRM-RF 스타일 PIT 손실
             estimated_sources = torch.stack([
@@ -450,10 +446,10 @@ class ImprovedJointTrainerWithSudoRMRFMix:
             # NMSE: 10 * log10(enhanced_power / target_power)
             anc_nmse_loss = self.safe_nmse_loss(en_flat, target_flat)
             
-            # ✅ 계산 후에 디버그 출력 (수정됨)
+            # 계산 후에 디버그 출력 (수정됨)
             debug_prob = self.config.get('debug_loss_print_prob', 0.05)
             if torch.rand(1).item() < debug_prob:
-                print(f"🔧 ANC Debug: dBA={anc_dba_loss.item():.4f}dB, "
+                print(f"ANC Debug: dBA={anc_dba_loss.item():.4f}dB, "
                         f"NMSE={anc_nmse_loss.item():.4f}dB, "
                         f"Signal_std={en_flat.std().item():.6f}, "
                         f"Target_std={target_flat.std().item():.6f}")
@@ -472,7 +468,7 @@ class ImprovedJointTrainerWithSudoRMRFMix:
                 anc_nmse_loss = anc_nmse_loss.requires_grad_(True)
                 
         except Exception as e:
-            print(f"❌ ANC loss calculation failed: {e}")
+            print(f"ANC loss calculation failed: {e}")
             # 기본값으로 설정
             anc_dba_loss = torch.mean((en_flat - target_flat) ** 2).requires_grad_(True)
             anc_nmse_loss = torch.mean((en_flat - target_flat) ** 2).requires_grad_(True)
@@ -516,7 +512,7 @@ class ImprovedJointTrainerWithSudoRMRFMix:
             total_loss = final_quality_loss
             
         if not total_loss.requires_grad:
-            print("❌ Total loss does not require gradients!")
+            print("Total loss does not require gradients!")
 
         return {
             'total_loss': total_loss,
@@ -598,11 +594,11 @@ class ImprovedJointTrainerWithSudoRMRFMix:
                 # 손실 계산
                 losses = self._compute_losses(outputs, batch)
                 
-                # ✅ 실제 역전파에 사용될 손실값 계산
+                # 실제 역전파에 사용될 손실값 계산
                 total_loss_for_backprop = losses['total_loss'] / self.accumulation_steps
 
             except Exception as e:
-                print(f"⚠️ Error in step {step}: {e}")
+                print(f"Error in step {step}: {e}")
                 self.optimizer.zero_grad()
                 continue
 
@@ -624,11 +620,11 @@ class ImprovedJointTrainerWithSudoRMRFMix:
                     self.optimizer.zero_grad()
 
             except Exception as e:
-                print(f"⚠️ Error in backward pass: {e}")
+                print(f"Error in backward pass: {e}")
                 self.optimizer.zero_grad()
                 continue
 
-            # ✅ 수정된 손실 로깅 - 실제 학습에 사용된 값들을 로깅
+            # 수정된 손실 로깅 - 실제 학습에 사용된 값들을 로깅
             # 총 손실은 accumulation으로 나눈 값
             total_losses['total'] += losses['total_loss'].item()
 
@@ -659,17 +655,17 @@ class ImprovedJointTrainerWithSudoRMRFMix:
             'Cls': f"{avg_classification:.4f}"
             }
 
-            # 🤖 분류 정확도 (가능한 경우)
+            # 분류 정확도 (가능한 경우)
             if classification_accuracies:
                 recent_acc = np.mean(classification_accuracies[-20:])  # 최근 20개 평균
                 postfix['Acc'] = f"{recent_acc:.2f}"
             
-            # 💾 메모리 (간단히)
+            # 메모리 (간단히)
             postfix['Mem'] = f"{allocated:.1f}G"
 
             train_bar.set_postfix(postfix)
 
-            # 🔧 상세 정보는 주기적으로 별도 출력 (매 50스텝)
+            # 상세 정보는 주기적으로 별도 출력 (매 50스텝)
             if step % 50 == 0:
                 # 상세 분석
                 avg_s1 = total_losses['s1_separation'] / step
@@ -678,14 +674,14 @@ class ImprovedJointTrainerWithSudoRMRFMix:
                 avg_anc_dba = total_losses['anc_dba'] / step
                 avg_anc_nmse = total_losses['anc_nmse'] / step
                 
-                print(f"\n📊 Step {step}/{num_batches} Detailed Metrics:")
-                print(f"   🎵 Separation: S1={avg_s1:.4f}, S2={avg_s2:.4f}")
-                print(f"   🔧 ANC: dBA={avg_anc_dba:.2f}dB, NMSE={avg_anc_nmse:.2f}dB")
-                print(f"   🎛️ Final Quality: {avg_final_quality:.4f}")
+                print(f"\nStep {step}/{num_batches} Detailed Metrics:")
+                print(f"Separation: S1={avg_s1:.4f}, S2={avg_s2:.4f}")
+                print(f"ANC: dBA={avg_anc_dba:.2f}dB, NMSE={avg_anc_nmse:.2f}dB")
+                print(f"Final Quality: {avg_final_quality:.4f}")
                 
                 if classification_accuracies:
                     recent_acc = np.mean(classification_accuracies[-50:])
-                    print(f"   🤖 Classification: Loss={avg_classification:.4f}, Acc={recent_acc:.1%}")
+                    print(f"Classification: Loss={avg_classification:.4f}, Acc={recent_acc:.1%}")
                 
                 # 학습 상태 요약
                 method_info = []
@@ -696,7 +692,7 @@ class ImprovedJointTrainerWithSudoRMRFMix:
                     method_info.append(f"Aug={avg_aug:.2f}")
                 
                 if method_info:
-                    print(f"   ⚙️ Methods: {', '.join(method_info)}")
+                    print(f"Methods: {', '.join(method_info)}")
                 print()  # 빈 줄
 
             # 정기적인 메모리 정리
@@ -714,7 +710,6 @@ class ImprovedJointTrainerWithSudoRMRFMix:
         return avg_losses
         
     def _validate(self):
-        """검증"""
         self.model.eval()
 
         total_losses = {
@@ -803,7 +798,7 @@ class ImprovedJointTrainerWithSudoRMRFMix:
                 val_bar.set_postfix(postfix)
 
             except Exception as e:
-                print(f"⚠️ Validation error: {e}")
+                print(f"Validation error: {e}")
                 continue
 
         # 평균 계산
@@ -820,7 +815,7 @@ class ImprovedJointTrainerWithSudoRMRFMix:
     def _log_epoch_summary(self, epoch, train_metrics, val_metrics):
         """에포크 완료 후 요약 출력"""
         print(f"\n{'='*60}")
-        print(f"📈 EPOCH {epoch} SUMMARY")
+        print(f"EPOCH {epoch} SUMMARY")
         print(f"{'='*60}")
         
         # 🎯 핵심 지표 비교
@@ -855,7 +850,6 @@ class ImprovedJointTrainerWithSudoRMRFMix:
         print(f"{'='*60}\n")
 
     def calculate_composite_score(self, val_metrics):
-        """🔧 종합 성능 점수 계산"""
         
         # 각 메트릭을 0-100 점수로 정규화
         def normalize_metric(value, target, direction='lower'):
@@ -876,7 +870,7 @@ class ImprovedJointTrainerWithSudoRMRFMix:
                 else:
                     return max(0, value / target * 100)
         
-        # 🎯 각 성능 지표별 점수 계산
+        # 각 성능 지표별 점수 계산
         anc_score = normalize_metric(
             val_metrics['anc_total'],  # abs() 제거
             target=-12.0,  # 음수 목표값
@@ -901,7 +895,7 @@ class ImprovedJointTrainerWithSudoRMRFMix:
             direction='lower'
         )
         
-        # 🏆 가중 평균으로 종합 점수 계산
+        # 가중 평균으로 종합 점수 계산
         weights = {
             'anc': 0.35,           # ANC 성능 35%
             'separation': 0.30,    # 분리 성능 30%
@@ -925,7 +919,6 @@ class ImprovedJointTrainerWithSudoRMRFMix:
         }
         
     def _save_checkpoint(self, epoch, metrics, is_best=False):
-        """🔧 다중 베스트 모델 저장"""
         state = {
             'epoch': epoch,
             'model_state_dict': self.model.state_dict(),
@@ -942,22 +935,22 @@ class ImprovedJointTrainerWithSudoRMRFMix:
         latest_path = os.path.join(self.checkpoint_path, 'latest_checkpoint.pth')
         torch.save(state, latest_path)
 
-        # 🏆 종합 베스트 모델
+        # 종합 베스트 모델
         scores = self.calculate_composite_score(metrics)
         if scores['composite_score'] > getattr(self, 'best_composite_score', 0):
             self.best_composite_score = scores['composite_score']
             best_composite_path = os.path.join(self.checkpoint_path, 'best_composite.pth')
             torch.save(state, best_composite_path)
-            print(f"🏆 NEW BEST COMPOSITE MODEL! Score: {scores['composite_score']:.1f}")
+            print(f"NEW BEST COMPOSITE MODEL! Score: {scores['composite_score']:.1f}")
         
-        # 🎯 개별 성능 베스트 모델들
+        # 개별 성능 베스트 모델들
         
         # ANC 베스트
         if metrics['anc_total'] < getattr(self, 'best_anc_performance', 0):  # 더 음수가 좋음
             self.best_anc_performance = metrics['anc_total']
             best_anc_path = os.path.join(self.checkpoint_path, 'best_anc.pth')
             torch.save(state, best_anc_path)
-            print(f"🔧 NEW BEST ANC MODEL! ANC: {metrics['anc_total']:.2f}dB")
+            print(f"NEW BEST ANC MODEL! ANC: {metrics['anc_total']:.2f}dB")
         
         # 분리 성능 베스트
         sep_loss = metrics.get('separation_loss', metrics.get('s1_separation', 999))
@@ -965,7 +958,7 @@ class ImprovedJointTrainerWithSudoRMRFMix:
             self.best_separation_loss = sep_loss
             best_sep_path = os.path.join(self.checkpoint_path, 'best_separation.pth')
             torch.save(state, best_sep_path)
-            print(f"🎵 NEW BEST SEPARATION MODEL! Sep: {sep_loss:.3f}")
+            print(f"NEW BEST SEPARATION MODEL! Sep: {sep_loss:.3f}")
         
         # 분류 성능 베스트
         cls_acc = metrics.get('classification_accuracy', 0)
@@ -973,7 +966,7 @@ class ImprovedJointTrainerWithSudoRMRFMix:
             self.best_classification_accuracy = cls_acc
             best_cls_path = os.path.join(self.checkpoint_path, 'best_classification.pth')
             torch.save(state, best_cls_path)
-            print(f"🤖 NEW BEST CLASSIFICATION MODEL! Acc: {cls_acc:.1%}")
+            print(f"NEW BEST CLASSIFICATION MODEL! Acc: {cls_acc:.1%}")
 
     def _log_metrics(self, epoch, train_metrics, val_metrics):
         """메트릭 로깅"""
@@ -1014,23 +1007,23 @@ class ImprovedJointTrainerWithSudoRMRFMix:
         self.best_separation_loss = float('inf')
         self.best_classification_accuracy = 0
 
-        print(f"🚀 Starting Mixed Training with Multi-Criteria Best Model Selection")
-        print(f"   Epochs: {epochs}")
-        print(f"   Training: Dynamic Mixing (spk1 + spk2)")
-        print(f"   Validation: Pre-mixed (mixtures, spk1, spk2)")
-        print(f"   PIT Loss: {self.use_pit_loss}")
-        print(f"   Online Augmentation: {self.use_online_augment}")
+        print(f"Starting Mixed Training with Multi-Criteria Best Model Selection")
+        print(f"Epochs: {epochs}")
+        print(f"Training: Dynamic Mixing (spk1 + spk2)")
+        print(f"Validation: Pre-mixed (mixtures, spk1, spk2)")
+        print(f"PIT Loss: {self.use_pit_loss}")
+        print(f"Online Augmentation: {self.use_online_augment}")
         
         # 🔧 Early Stopping 설정 정보 출력 (한 번만)
-        print(f"🔧 Early Stopping Configuration:")
-        print(f"   Method: Multi-Metric (ANC: {self.early_stopping.metric_weights['anc_total']:.1%}, "
+        print(f"Early Stopping Configuration:")
+        print(f"Method: Multi-Metric (ANC: {self.early_stopping.metric_weights['anc_total']:.1%}, "
             f"Sep: {self.early_stopping.metric_weights['separation_loss']:.1%}, "
             f"Cls: {self.early_stopping.metric_weights['classification_accuracy']:.1%}, "
             f"Qual: {self.early_stopping.metric_weights['final_quality']:.1%})")
         print(f"   Patience: {self.early_stopping.patience}, Min Delta: {self.early_stopping.min_delta}")
         
         for epoch in range(1, epochs + 1):
-            print(f"\n🔄 EPOCH {epoch}/{epochs}")
+            print(f"\n EPOCH {epoch}/{epochs}")
 
             try:
                 # 훈련
@@ -1045,10 +1038,10 @@ class ImprovedJointTrainerWithSudoRMRFMix:
                 # 에포크 요약 출력
                 self._log_epoch_summary(epoch, train_metrics, val_metrics)
                 
-                # 🏆 종합 점수 계산 (트레이너의 기존 함수)
+                # 종합 점수 계산 (트레이너의 기존 함수)
                 scores = self.calculate_composite_score(val_metrics)
                 
-                # 🔧 Early Stopping 업데이트 (새로운 다중 메트릭 방식)
+                # Early Stopping 업데이트 (새로운 다중 메트릭 방식)
                 self.early_stopping.update(val_metrics)
 
                 # 스케줄러 업데이트
@@ -1060,48 +1053,48 @@ class ImprovedJointTrainerWithSudoRMRFMix:
                 )
                 self.scheduler.step(composite_score_for_scheduler)
                 
-                # 🏆 종합 점수 표시 (트레이너의 기존 점수 + Early Stopping 점수)
-                print(f"🏆 Trainer Composite Score: {scores['composite_score']:.1f} "
+                # 종합 점수 표시 (트레이너의 기존 점수 + Early Stopping 점수)
+                print(f"Trainer Composite Score: {scores['composite_score']:.1f} "
                     f"(ANC:{scores['anc_score']:.0f}, Sep:{scores['separation_score']:.0f}, "
                     f"Cls:{scores['classification_score']:.0f}, Qual:{scores['final_quality_score']:.0f})")
 
                 current_lr = self.optimizer.param_groups[0]['lr']
-                print(f"📊 LR: {current_lr:.2e}")
+                print(f"LR: {current_lr:.2e}")
 
                 # TensorBoard 로깅
                 self._log_metrics(epoch, train_metrics, val_metrics)
 
-                # 🏆 다중 베스트 모델 저장 (트레이너의 기존 함수)
+                # 다중 베스트 모델 저장 (트레이너의 기존 함수)
                 self._save_checkpoint(epoch, val_metrics)
 
-                # 🔧 개선 상황 요약 (2 에포크마다, Early Stopping에서)
+                # 개선 상황 요약 (2 에포크마다, Early Stopping에서)
                 if epoch % 2 == 0:
                     improvement_summary = self.early_stopping.get_improvement_summary()
-                    print(f"📈 Improvement Summary: {improvement_summary}")
+                    print(f"Improvement Summary: {improvement_summary}")
 
                 # 조기 종료 체크
                 if self.early_stopping.should_stop():
                     best_scores = self.early_stopping.get_best_scores()
-                    print(f"\n⏹ Early stopping after {epoch} epochs")
-                    print(f"🏆 Early Stopping Best Composite Score: {best_scores['composite_score']:.4f}")
-                    print(f"📊 Best Individual Scores: {best_scores['individual_bests']}")
+                    print(f"\n Early stopping after {epoch} epochs")
+                    print(f"Early Stopping Best Composite Score: {best_scores['composite_score']:.4f}")
+                    print(f"Best Individual Scores: {best_scores['individual_bests']}")
                     break
 
             except Exception as e:
-                print(f"❌ Error in epoch {epoch}: {e}")
+                print(f"Error in epoch {epoch}: {e}")
                 self.memory_manager.cleanup_memory(aggressive=True)
                 continue
 
             # 에포크 후 메모리 정리
             self.memory_manager.cleanup_memory(aggressive=True)
 
-        print(f"\n✅ MIXED TRAINING COMPLETED!")
-        print(f"🏆 Best Composite Score: {self.best_composite_score:.1f}")
-        print(f"🔧 Best ANC: {self.best_anc_performance:.2f}dB")
-        print(f"🎵 Best Separation: {self.best_separation_loss:.3f}")
-        print(f"🤖 Best Classification: {self.best_classification_accuracy:.1%}")
-        print(f"📁 Results saved in: {self.exp_path}")
-        print(f"\n💡 Available models:")
+        print(f"\n MIXED TRAINING COMPLETED!")
+        print(f" Best Composite Score: {self.best_composite_score:.1f}")
+        print(f" Best ANC: {self.best_anc_performance:.2f}dB")
+        print(f" Best Separation: {self.best_separation_loss:.3f}")
+        print(f" Best Classification: {self.best_classification_accuracy:.1%}")
+        print(f" Results saved in: {self.exp_path}")
+        print(f"\n Available models:")
         print(f"   - best_composite.pth (종합 최고)")
         print(f"   - best_anc.pth (ANC 최고)")  
         print(f"   - best_separation.pth (분리 최고)")

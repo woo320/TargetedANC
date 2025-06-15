@@ -1,6 +1,3 @@
-"""
-안내방송음 /그 외 소음 판별 이진 분류기 블록
-"""
 import torch
 import torch.nn.functional as F
 import sys

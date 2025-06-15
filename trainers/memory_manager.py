@@ -1,13 +1,9 @@
-"""
-적응적 메모리 관리 클래스
-"""
 import torch
 import gc
 import psutil
 from config.constants import SR
 
 class MemoryManager:
-    """적응적 메모리 관리 클래스"""
 
     def __init__(self, config):
         self.max_memory_gb = config.get('max_memory_gb', 22.5)
