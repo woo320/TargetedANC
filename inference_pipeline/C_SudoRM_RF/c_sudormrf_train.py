@@ -1,6 +1,6 @@
 """
+출처: https://github.com/etzinis/sudo_rm_rf/blob/master/sudo_rm_rf/dnn/experiments/run_fuss_separation.py  => 이를 수정 및 변형
 SudoRM-RF Causal 모델 학습/평가 메인 스크립트
-
 - 프로젝트 내 PYTHONPATH 및 의존 모듈 세팅
 - 커맨드라인 파서로 하이퍼파라미터 로드, 데이터 로더/모델/평가지표 등 생성
 - 학습/검증/테스트 전체 loop 구현 (checkpoint resume, early stopping 포함)
