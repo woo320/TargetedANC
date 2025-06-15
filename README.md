@@ -60,6 +60,7 @@ pip install -r requirements.txt
   --output_dir <your_output_dir>
 ```
 
+---
 
 ### Audio Segment Classifier(ASC) Train Command
 ```bash
@@ -78,6 +79,7 @@ pip install -r requirements.txt
     --epochs 15
 ```
 
+---
 
 ### WaveNet-VNNs Train Command
 ```bash
@@ -96,6 +98,7 @@ pip install -r requirements.txt
   --output-anti-dir <your_antinoise_dir>
 ```
 
+---
 
   ## EndtoEnd Inference Command
 ```bash
