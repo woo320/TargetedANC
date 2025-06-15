@@ -50,7 +50,35 @@ pip install -r requirements.txt
   --n_jobs 4 \
   -clp <your_checkpoint_dir>
 ```
---model_type을 causa로 지정함으로써 c-sudormrf++모델을 사용하게 됩니다.
+| 옵션명                | 설명                                                      |
+|----------------------|-----------------------------------------------------------|
+| --model_type         | 사용 모델 타입 (causal이면 C-SuDORMRF++ 사용)             |
+| --train              | 학습 데이터셋 이름                                        |
+| --val                | 검증 데이터셋 이름                                        |
+| --test               | 테스트 데이터셋 이름                                      |
+| --n_channels         | 입력 오디오 채널 수                                       |
+| --fs                 | 샘플링레이트(Hz)                                          |
+| --batch_size         | 배치 크기                                                 |
+| --n_epochs           | 학습 에폭 수                                              |
+| --audio_timelength   | 한 샘플 길이(초)                                          |
+| --enc_kernel_size    | 인코더 커널 크기                                          |
+| --enc_num_basis      | 인코더 basis 수                                           |
+| --in_channels        | 내부 채널 수                                              |
+| --out_channels       | 외부 채널 수                                              |
+| --num_blocks         | 블록 수                                                   |
+| --lr                 | 학습률(learning rate)                                     |
+| --divide_lr_by       | 학습률 감소 비율                                          |
+| --patience           | validation patience                                       |
+| --early_stop_patience| early stopping patience                                   |
+| --upsampling_depth   | 업샘플링 depth                                            |
+| --max_num_sources    | 최대 소스 수                                              |
+| --min_num_sources    | 최소 소스 수                                              |
+| --zero_pad_audio     | 오디오 zero pad 사용 여부(플래그)                         |
+| --normalize_audio    | 오디오 normalize 사용 여부(플래그)                        |
+| --cad                | 사용 GPU id                                               |
+| --n_jobs             | 병렬처리 쓰레드 수                                        |
+| --clp                | 체크포인트 저장 폴더 경로                                 |
+
 
 
 ### C-SuDoRM-RF++ Inference Command
