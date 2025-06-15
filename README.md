@@ -18,7 +18,7 @@ pip install -r requirements.txt
 
 
 # Inference_Pipeline
-## 분리, 분류, 저감 모델의 Training과 Inference Command line usage
+## **분리, 분류, 저감 모델의 Training과 Inference Command line usage**
 
 ### C-SuDoRM-RF++ Train Command
 ```bash
