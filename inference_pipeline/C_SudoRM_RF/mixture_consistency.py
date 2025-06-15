@@ -1,5 +1,5 @@
 """!
-출처: https://github.com/etzinis/sudo_rm_rf/blob/master/sudo_rm_rf/dnn/experiments/utils/mixture_consistency.py
+출처: https://github.com/etzinis/sudo_rm_rf/blob/master/sudo_rm_rf/dnn/experiments/utils/mixture_consistency.py => 이걸 수정 및 변경
 @brief 논문 기반 mixture consistency 적용 코드  
 Scott Wisdom, John R Hershey, Kevin Wilson, Jeremy Thorpe, Michael
 Chinen, Brian Patton, and Rif A Saurous.  
