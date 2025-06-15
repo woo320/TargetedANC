@@ -50,6 +50,7 @@ pip install -r requirements.txt
   --n_jobs 4 \
   -clp <your_checkpoint_dir>
 ```
+--model_type을 causa로 지정함으로써 c-sudormrf++모델을 사용하게 됩니다.
 
 
 ### C-SuDoRM-RF++ Inference Command
