@@ -1,4 +1,5 @@
 """
+출처: https://github.com/Lu-Baihh/WaveNet-VNNs-for-ANC/blob/main/WaveNet_VNNs/trainer.py => 아래의 기능들 추가
 WaveNet-VNNs Trainer 클래스
 - 전체 학습(분산/단일), 체크포인트 관리, 로그/스케줄러, 손실 등 통합 처리
 - AMP, Tensorboard, resume 기능 포함.
