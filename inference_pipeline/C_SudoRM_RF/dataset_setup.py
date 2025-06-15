@@ -1,4 +1,5 @@
 """!
+출처 : https://github.com/etzinis/sudo_rm_rf/blob/master/sudo_rm_rf/dnn/experiments/utils/dataset_setup.py => 이를 수정 및 변형
 @brief Infer Dataset Specific parameters and return generators
 @author Efthymios Tzinis
 @copyright University of Illinois at Urbana-Champaign
