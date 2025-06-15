@@ -17,3 +17,8 @@ pip install -r requirements.txt
 
 
 # Inference_Pipeline
+## 분리, 분류, 저감 모델의 학습과 추론 명령어
+
+### C-SuDoRM-RF++ Train Code
+'''bash
+!python c_sudormrf_train.py --model_type causal --train "ANNOUNCENOISE" --val "ANNOUNCENOISE" --test "ANNOUNCENOISE" --n_channels 1 -fs 16000 --batch_size 8 --n_epochs 200 --audio_timelength 4. --enc_kernel_size 21 --enc_num_basis 256 --in_channels 512 --out_channels 256 --num_blocks 18 -lr 0.001 --divide_lr_by 3. --patience 10 --early_stop_patience 30 --upsampling_depth 5 --max_num_sources 2 --min_num_sources 2 --zero_pad_audio --normalize_audio -cad 0 --n_jobs 4 -clp /content/drive/MyDrive/inference_pipeline/C_SudoRM_RF/checkpoints
