@@ -70,7 +70,7 @@ pip install -r requirements.txt
     --val_s2_dir     /content/drive/MyDrive/final_data/val/spk2 \
     --test_s1_dir    /content/drive/MyDrive/final_data/test/spk1 \
     --test_s2_dir    /content/drive/MyDrive/final_data/test/spk2 \
-    --save_path '/your_checkpoint_dir' \
+    --save_path <your_checkpoint_dir> \
     --sr 16000 \
     --window_len 16000 \
     --batch_size 16 \
@@ -91,9 +91,9 @@ pip install -r requirements.txt
 !python /content/drive/MyDrive/inference_pipeline/WaveNet_VNNs/inference_opt.py \
   --model-path /content/drive/MyDrive/inference_pipeline/WaveNet_VNNs/model.pth \
   --config /content/drive/MyDrive/inference_pipeline/WaveNet_VNNs/config_opt_210.json \
-  --test-data-dir '/your_data_dir' \
+  --test-data-dir <your_data_dir> \
   --output-enh-dir <your_denoise_dir> \
-  --output-anti-dir '/your_antinoise_dir>
+  --output-anti-dir <your_antinoise_dir>
 ```
 
 
@@ -111,4 +111,3 @@ pip install -r requirements.txt
   --anti_out     <your_antinoise_dir> \
   --final_out   <your_final_dir>
 ```
-out인자는 미리 빈 폴더로 준비해야 합니다다
