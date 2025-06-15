@@ -1,6 +1,6 @@
 """!
+출처: https://github.com/etzinis/sudo_rm_rf/blob/master/sudo_rm_rf/dnn/losses/sisdr.py
 @brief Torch에서 SISNR을 매우 효율적으로 계산하는 코드. asteroid에서 값 검증을 위해 일부 코드가 차용됨.
-
 @author Efthymios Tzinis {etzinis2@illinois.edu}
 @copyright University of Illinois at Urbana Champaign
 """
