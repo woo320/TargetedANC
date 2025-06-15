@@ -1,3 +1,4 @@
+#출처: https://github.com/Lu-Baihh/WaveNet-VNNs-for-ANC/blob/main/WaveNet_VNNs/cfg_train.toml => val_datasetloader삭제
 [DDP]
 world_size = 1             # 사용 가능한 GPU 개수
 
