@@ -21,7 +21,8 @@ Training Data Download Link : https://drive.google.com/file/d/1odQm9jrT03vR3z78y
 <img src="https://github.com/user-attachments/assets/a02c34e8-2300-44c7-8ad5-4a4dd7f9cf3f" alt="Dataset Analysis Tables" width="600">
 </div>
 
-총 36시간의 학습 데이터셋\N
+총 36시간의 학습 데이터셋
+
 서울 교통 공사의 1~8호선 안내방송음과 AI HUB의 도시 소음 데이터를 사용
 
 ---
