@@ -194,24 +194,23 @@ def run_joint_inference(
             # 분류 결과 처리
             classification_info = ""
             if 'classification' in outputs and outputs['classification'] is not None:
-                try:
-                    classification_results = outputs['classification']
+                classification_results = outputs['classification']
+                
+                if isinstance(classification_results, dict) and 'batch_info' in classification_results:
+                    # 추론 스타일 결과
+                    batch_info = classification_results['batch_info'][0]
                     
-                    if isinstance(classification_results, dict) and 'batch_info' in classification_results:
-                        # 추론 스타일 결과
-                        batch_info = classification_results['batch_info'][0]
-                        
-                        chan0_prob = batch_info['ch0_prob']  # mask_chan0 → ch0_prob
-                        chan1_prob = batch_info['ch1_prob']  # mask_chan1 → ch1_prob
-                        is_ch0_broadcast = batch_info['is_channel0_broadcast']
-                        
-                        classification_info = f"Ch0:{chan0_prob:.3f}, Ch1:{chan1_prob:.3f}, Broadcast:Ch{'0' if is_ch0_broadcast else '1'}"
-                        
-                    elif isinstance(classification_results, torch.Tensor):
-                        prob = torch.sigmoid(classification_results).item()
-                        classification_info = f"Broadcast prob: {prob:.3f}"
-                    else:
-                        classification_info = "Classification available"
+                    chan0_prob = batch_info['ch0_prob']  # mask_chan0 → ch0_prob
+                    chan1_prob = batch_info['ch1_prob']  # mask_chan1 → ch1_prob
+                    is_ch0_broadcast = batch_info['is_channel0_broadcast']
+                    
+                    classification_info = f"Ch0:{chan0_prob:.3f}, Ch1:{chan1_prob:.3f}, Broadcast:Ch{'0' if is_ch0_broadcast else '1'}"
+                    
+                elif isinstance(classification_results, torch.Tensor):
+                    prob = torch.sigmoid(classification_results).item()
+                    classification_info = f"Broadcast prob: {prob:.3f}"
+                else:
+                    classification_info = "Classification available"
 
             # 성능 지표 계산
             total_ms = (t1 - t0) * 1000.0
@@ -392,9 +391,8 @@ def quick_inference(joint_model_path, input_audio_dir, output_base_dir, skip_fir
 
 # 사용 예시
 if __name__ == "__main__":
-    JOINT_MODEL_PATH = "/content/drive/MyDrive/joint/result/joint_mixed_training_2025-06-09-12h00m/weights/best_composite.pth"
-    INPUT_DIR = "/content/drive/MyDrive/final_data/지하철실제녹음"
-    OUTPUT_DIR = "/content/drive/MyDrive/joint/inference_output"
+    JOINT_MODEL_PATH = "./weights/best_composite.pth"
+    INPUT_DIR = "./final_data"
+    OUTPUT_DIR = "./inference_output"
 
-    # 실행
     quick_inference(JOINT_MODEL_PATH, INPUT_DIR, OUTPUT_DIR)

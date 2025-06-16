@@ -7,20 +7,12 @@ import numpy as np
 from scipy.io import loadmat
 
 # 프로젝트 경로 설정
-sys.path.insert(0, "/content/drive/MyDrive/joint/sudo_rm_rf")
-sys.path.insert(0, "/content/drive/MyDrive/joint/WaveNet-VNNs-for-ANC/WaveNet_VNNs")
+sys.path.insert(0, "./sudo_rm_rf")
+sys.path.insert(0, "./WaveNet_VNNs")
 
 # C-SudoRM-RF++ 관련 import
-try:
-    from sudo_rm_rf.dnn.models.causal_improved_sudormrf_v3 import CausalSuDORMRF
-    import sudo_rm_rf.dnn.experiments.utils.mixture_consistency as mixture_consistency
-except ImportError:
-    try:
-        from sudo_rm_rf.dnn.models.causal_improved_sudormrf_v3 import CausalSuDORMRF
-        import sudo_rm_rf.dnn.utils.mixture_consistency as mixture_consistency
-    except ImportError:
-        print("SudoRM-RF import failed")
-        raise
+from c_sudorm_rf.causal_improved_sudormrf_v3 import CausalSuDORMRF
+import c_sudorm_rf.mixture_consistency as mixture_consistency
 
 # WaveNet-VNNs 관련 anc 관련 import
 from networks import WaveNet_VNNs
@@ -66,7 +58,6 @@ class ImprovedJointModel(nn.Module):
         super().__init__()
 
         
-
         #설정값 관리
         self.model_config = model_config or {}
         self.eta_init_value = self.model_config.get('eta_init_value', 0.1)

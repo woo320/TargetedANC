@@ -4,9 +4,8 @@ import sys
 import os
 import numpy as np
 
-
 # WaveNet-VNNs 경로 추가
-sys.path.insert(0, "/content/drive/MyDrive/joint/WaveNet-VNNs-for-ANC/WaveNet_VNNs")
+sys.path.insert(0, "./WaveNet_VNNs")
 from loss_function import dBA_Loss, NMSE_Loss
 
 def sisdr_loss(est, target, zero_mean=True, eps=1e-9):

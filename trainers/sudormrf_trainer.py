@@ -19,7 +19,7 @@ except ImportError:
 
 from models.model_utils import compute_broadcast_classification_loss
 # WaveNet 경로 추가
-sys.path.insert(0, "/content/drive/MyDrive/joint/WaveNet-VNNs-for-ANC/WaveNet_VNNs")
+sys.path.insert(0, "./WaveNet_VNNs")
 from loss_function import dBA_Loss, NMSE_Loss
 from utils import fir_filter, SEF
 

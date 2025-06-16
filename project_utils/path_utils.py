@@ -1,5 +1,6 @@
 import os
 
+# 실행 시 데이터 경로 수정해주세요.
 def setup_mixed_data_directories(base_dir="/content/drive/MyDrive/final_data"):
     """
     [역할]
