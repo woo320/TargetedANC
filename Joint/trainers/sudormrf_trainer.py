@@ -27,7 +27,7 @@ from utils import fir_filter, SEF
 from datasets.sudormrf_dataset import SudoRMRFDynamicMixDataset
 from datasets.improved_dataset import ImprovedAudioDataset
 from datasets.collate_functions import sudormrf_dynamic_mix_collate_fn, improved_collate_fn
-from .memory_manager import MemoryManager
+from trainers.memory_manager import MemoryManager
 from project_utils import EarlyStoppingManager
 from project_utils.audio_utils import standardize_audio_dims
 from project_utils.augmentation import online_augment_sudormrf
