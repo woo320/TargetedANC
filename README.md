@@ -99,6 +99,11 @@ pip install -r requirements.txt
   --device 0
 ```
 
+Dataset
+Demand: https://www.kaggle.com/datasets/chrisfilo/demand
+ms_snsd: https://www.kaggle.com/datasets/jiangwq666/ms-snsd?resource=download
+
+
 ### WaveNet-VNNs Infernce Command
 ```bash
 !python /content/drive/MyDrive/inference_pipeline/WaveNet_VNNs/inference_opt.py \
