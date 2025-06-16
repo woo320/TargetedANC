@@ -7,8 +7,8 @@ import numpy as np
 from scipy.io import loadmat
 
 # 프로젝트 경로 설정
-sys.path.insert(0, "./sudo_rm_rf")
-sys.path.insert(0, "./WaveNet_VNNs")
+sys.path.insert(0, "./Benchmark_models/c_sudorm_rf")
+sys.path.insert(0, "./Benchmark_models/WaveNet_VNNs")
 
 # C-SudoRM-RF++ 관련 import
 from c_sudorm_rf.causal_improved_sudormrf_v3 import CausalSuDORMRF

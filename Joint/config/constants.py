@@ -17,8 +17,8 @@ MEMORY_WARNING_THRESHOLD = DEFAULT_MEMORY_WARNING_THRESHOLD
 MEMORY_CRITICAL_THRESHOLD = DEFAULT_MEMORY_CRITICAL_THRESHOLD
 
 # ANC 필터 경로 (이건 고정값이므로 유지)
-PRI_PATH = "./channel/pri_channel.mat"
-SEC_PATH = "./channel/sec_channel.mat"
+PRI_PATH = "./Joint/channel/pri_channel.mat"
+SEC_PATH = "./Joint/channel/sec_channel.mat"
 
 # 필터 로드 (안전한 로딩)
 try:

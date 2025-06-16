@@ -36,10 +36,10 @@ def load_joint_model(joint_checkpoint_path, device):
     else:
         # 기본 경로들 (weight 폴더)
         print("No config in checkpoint, using default paths")
-        sudormrf_checkpoint = "/weight/separate.pt"
-        wavenet_checkpoint = "/weight/reduction.pth"
-        wavenet_config = "/weight/config_opt_210.json"
-        broadcast_classifier_checkpoint = "/weight/classifier.pth"
+        sudormrf_checkpoint = "/Joint/weight/separate.pt"
+        wavenet_checkpoint = "/Joint/weight/reduction.pth"
+        wavenet_config = "/Joint/weight/config_opt_210.json"
+        broadcast_classifier_checkpoint = "/Joint/weight/classifier.pth"
         use_broadcast_classifier = True
 
     # 조인트 모델 생성
@@ -391,8 +391,8 @@ def quick_inference(joint_model_path, input_audio_dir, output_base_dir, skip_fir
 
 # 사용 예시
 if __name__ == "__main__":
-    JOINT_MODEL_PATH = "./weights/best_composite.pth"
-    INPUT_DIR = "./final_data"
-    OUTPUT_DIR = "./inference_output"
+    JOINT_MODEL_PATH = "./Joint/weights/best_composite.pth"
+    INPUT_DIR = "./Joint/final_data"
+    OUTPUT_DIR = "./Joint/inference_output"
 
     quick_inference(JOINT_MODEL_PATH, INPUT_DIR, OUTPUT_DIR)
