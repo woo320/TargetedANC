@@ -20,7 +20,7 @@ def main():
     # 3. 설정 요약 출력
     print(f"데이터: Training(동적믹싱) + Validation(premixed)")
     print(f"PIT Loss: {config['use_pit_loss']}")
-    print(f"Classifier: {config['use_broadcast_classifier']")
+    print(f"Classifier: {config['use_broadcast_classifier']}")
     print(f"배치: {config['batch_size']} × {config['accumulation_steps']} = {config['batch_size'] * config['accumulation_steps']}")
     print(f"에포크: {config['epochs']} (patience={config['early_stopping_patience']})")
     print(f"학습률: sep={config['separation_lr']:.0e}, noise={config['noise_lr']:.0e}, cls={config['classifier_lr']:.0e}")
