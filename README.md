@@ -102,7 +102,7 @@ pip install -r requirements.txt
 
 ---
 
-  ## EndtoEnd Inference Command
+## EndtoEnd Inference Command
 ```bash
 !python /content/drive/MyDrive/inference_pipeline/end2end_inference.py \
   --sep_ckpt      /content/drive/MyDrive/inference_pipeline/C_SudoRM_RF/causal_best.pt \
