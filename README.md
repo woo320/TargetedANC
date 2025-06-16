@@ -66,7 +66,7 @@ pip install -r requirements.txt
 
 ### Audio Segment Classifier(ASC) Training Command
 ```bash
-!python /content/drive/MyDrive/inference_pipeline/ASC/ASC.py \
+!python /content/drive/MyDrive/inference_pipeline/ASC/ASC_train.py \
     --train_s1_dir /content/drive/MyDrive/final_data/train/spk1 \
     --train_s2_dir /content/drive/MyDrive/final_data/train/spk2 \
     --val_s1_dir     /content/drive/MyDrive/final_data/val/spk1 \
@@ -81,7 +81,16 @@ pip install -r requirements.txt
     --epochs 15
 ```
 
+### Audio Segment Classifier(ASC) Inference Command
+```bash
+!python /content/drive/MyDrive/inference_pipeline/ASC/ASC_inference.py \
+  --test_s1_dir <your_broadcast_dir> \
+  --test_s2_dir <your_noise_dir> \
+  --model_path /content/drive/MyDrive/inference_pipeline/ASC/asc.pth
+```
+
 ---
+
 
 ### WaveNet-VNNs Training Command
 ```bash
