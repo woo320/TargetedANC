@@ -17,8 +17,8 @@ pip install -r requirements.txt
 
 
 
-# Inference_Pipeline
-## **분리, 분류, 저감 모델의 Training과 Inference Command line usage**
+## Inference_Pipeline
+**분리, 분류, 저감 모델의 Training과 Inference Command line usage**
 
 ### C-SuDoRM-RF++ Training Command
 ```bash
@@ -102,7 +102,7 @@ pip install -r requirements.txt
 
 ---
 
-## EndtoEnd Inference Command
+### EndtoEnd Inference Command
 ```bash
 !python /content/drive/MyDrive/inference_pipeline/end2end_inference.py \
   --sep_ckpt      /content/drive/MyDrive/inference_pipeline/C_SudoRM_RF/causal_best.pt \
@@ -118,3 +118,4 @@ pip install -r requirements.txt
 ```
 **실행 환경은 Google Colab을 기준으로 작성되었습니다.**  
 **모든 out 및 output 인자들은 빈 디렉토리로 미리 준비해두어야 합니다.**
+
