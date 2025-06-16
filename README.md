@@ -27,6 +27,18 @@ Training Data Download Link : https://drive.google.com/file/d/1odQm9jrT03vR3z78y
 
 ---
 
+### Airplane Data
+Airplane Data Download Link : https://drive.google.com/file/d/1sAq702S0YB-UkHnM5RuQGnYXmg5fniwf/view?usp=sharing
+
+<div align="center">
+<img src="https://github.com/user-attachments/assets/19263f40-3618-4bf6-b5b0-6e17ee62fd17" alt="airplane_data_statistic" width="600">
+</div>
+
+총 18시간의 항공 데이터셋
+
+Simplaza의 74개의 항공사 기내 안전 안내방송 음원과 AI HUB의 도시 소음 데이터 중 비행기 소음 데이터를 사용
+
+---
 
 ## Inference_Pipeline
 **분리, 분류, 저감 모델의 Training과 Inference Command line usage**
