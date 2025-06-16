@@ -103,7 +103,7 @@ pip install -r requirements.txt
 
 Demand: https://www.kaggle.com/datasets/chrisfilo/demand
 
-ms_snsd: https://www.kaggle.com/datasets/jiangwq666/ms-snsd?resource=download
+ms_snsd: https://www.kaggle.com/datasets/jiangwq666/ms-snsd
 
 
 ### WaveNet-VNNs Infernce Command
