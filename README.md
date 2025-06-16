@@ -119,3 +119,10 @@ pip install -r requirements.txt
 **실행 환경은 Google Colab을 기준으로 작성되었습니다.**  
 **모든 out 및 output 인자들은 빈 디렉토리로 미리 준비해두어야 합니다.**
 
+## References
+
+SudoRMRF
+https://github.com/etzinis/sudo_rm_rf
+
+WaveNet-Vnns
+https://github.com/Lu-Baihh/WaveNet-VNNs-for-ANC
