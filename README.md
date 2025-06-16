@@ -33,7 +33,7 @@ Training Data Download Link : https://drive.google.com/file/d/1odQm9jrT03vR3z78y
 
 ### C-SuDoRM-RF++ Training Command
 ```bash
-!python /content/drive/MyDrive/inference_pipeline/C_SudoRM_RF/c_sudormrf_train.py \
+!python /content/drive/MyDrive/TargetedANC/inference_pipeline/C_SudoRM_RF/c_sudormrf_train.py \
   --model_type causal \
   --train "ANNOUNCENOISE" \
   --val "ANNOUNCENOISE" \
@@ -67,9 +67,9 @@ Training Data Download Link : https://drive.google.com/file/d/1odQm9jrT03vR3z78y
 
 ### C-SuDoRM-RF++ Inference Command
 ```bash
-!python /content/drive/MyDrive/inference_pipeline/C_SudoRM_RF/c_sudormrf_inference.py \
-  -ckpt /content/drive/MyDrive/inference_pipeline/C_SudoRM_RF/causal_best.pt \
-  --input_dir <your_data_dir> \
+!python /content/drive/MyDrive/TargetedANC/inference_pipeline/C_SudoRM_RF/c_sudormrf_inference.py \
+  -ckpt /content/drive/MyDrive/TargetedANC/inference_pipeline/C_SudoRM_RF/causal_best.pt \
+  --input_dir /content/drive/MyDrive/TargetedANC/inference_testdata \
   --output_dir <your_output_dir>
 ```
 
@@ -77,7 +77,7 @@ Training Data Download Link : https://drive.google.com/file/d/1odQm9jrT03vR3z78y
 
 ### Audio Segment Classifier(ASC) Training Command
 ```bash
-!python /content/drive/MyDrive/inference_pipeline/ASC/ASC_train.py \
+!python /content/drive/MyDrive/TargetedANC/inference_pipeline/ASC/ASC_train.py \
     --train_s1_dir /content/drive/MyDrive/final_data/train/spk1 \
     --train_s2_dir /content/drive/MyDrive/final_data/train/spk2 \
     --val_s1_dir     /content/drive/MyDrive/final_data/val/spk1 \
@@ -94,7 +94,7 @@ Training Data Download Link : https://drive.google.com/file/d/1odQm9jrT03vR3z78y
 
 ### Audio Segment Classifier(ASC) Inference Command
 ```bash
-!python /content/drive/MyDrive/inference_pipeline/ASC/ASC_inference.py \
+!python /content/drive/MyDrive/TargetedANC/inference_pipeline/ASC/ASC_inference.py \
   --test_s1_dir <your_broadcast_dir> \
   --test_s2_dir <your_noise_dir> \
   --model_path /content/drive/MyDrive/inference_pipeline/ASC/asc.pth
@@ -105,8 +105,8 @@ Training Data Download Link : https://drive.google.com/file/d/1odQm9jrT03vR3z78y
 
 ### WaveNet-VNNs Training Command
 ```bash
-!python /content/drive/MyDrive/inference_pipeline/WaveNet_VNNs/train_opt_210.py \
-  --config /content/drive/MyDrive/inference_pipeline/WaveNet_VNNs/cfg_train_opt_210.toml \
+!python /content/drive/MyDrive/TargetedANC/inference_pipeline/WaveNet_VNNs/train_opt_210.py \
+  --config /content/drive/MyDrive/TargetedANC/inference_pipeline/WaveNet_VNNs/cfg_train_opt_210.toml \
   --device 0
 ```
 
@@ -119,10 +119,10 @@ ms_snsd: https://www.kaggle.com/datasets/jiangwq666/ms-snsd
 
 ### WaveNet-VNNs Infernce Command
 ```bash
-!python /content/drive/MyDrive/inference_pipeline/WaveNet_VNNs/inference_opt.py \
-  --model-path /content/drive/MyDrive/inference_pipeline/WaveNet_VNNs/model.pth \
-  --config /content/drive/MyDrive/inference_pipeline/WaveNet_VNNs/config_opt_210.json \
-  --test-data-dir <your_data_dir> \
+!python /content/drive/MyDrive/TargetedANC/inference_pipeline/WaveNet_VNNs/inference_opt.py \
+  --model-path /content/drive/MyDrive/TargetedANC/inference_pipeline/WaveNet_VNNs/model.pth \
+  --config /content/drive/MyDrive/TargetedANC/inference_pipeline/WaveNet_VNNs/config_opt_210.json \
+  --test-data-dir /content/drive/MyDrive/TargetedANC/inference_testdata \
   --output-enh-dir <your_denoise_dir> \
   --output-anti-dir <your_antinoise_dir>
 ```
@@ -131,12 +131,12 @@ ms_snsd: https://www.kaggle.com/datasets/jiangwq666/ms-snsd
 
 ### EndtoEnd Inference Command
 ```bash
-!python /content/drive/MyDrive/inference_pipeline/end2end_inference.py \
-  --sep_ckpt      /content/drive/MyDrive/inference_pipeline/C_SudoRM_RF/causal_best.pt \
-  --noise_cfg     /content/drive/MyDrive/inference_pipeline/WaveNet_VNNs/config_opt_210.json \
-  --noise_ckpt   /content/drive/MyDrive/inference_pipeline/WaveNet_VNNs/model.pth \
-  --bcd_ckpt      /content/drive/MyDrive/inference_pipeline/ASC/asc.pth \
-  --input_dir     <your_data_dir> \
+!python /content/drive/MyDrive/TargetedANC/inference_pipeline/end2end_inference.py \
+  --sep_ckpt      /content/drive/MyDrive/TargetedANC/inference_pipeline/C_SudoRM_RF/causal_best.pt \
+  --noise_cfg     /content/drive/MyDrive/TargetedANC/inference_pipeline/WaveNet_VNNs/config_opt_210.json \
+  --noise_ckpt   /content/drive/MyDrive/TargetedANC/inference_pipeline/WaveNet_VNNs/model.pth \
+  --bcd_ckpt      /content/drive/MyDrive/TargetedANC/inference_pipeline/ASC/asc.pth \
+  --input_dir     /content/drive/MyDrive/TargetedANC/inference_testdata \
   --sep_out      <your_seperation_dir> \
   --noise_out       <your_noise_dir> \
   --denoise_out      <your_denoise_dir> \
