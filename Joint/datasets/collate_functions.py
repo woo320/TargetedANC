@@ -151,7 +151,6 @@ def improved_collate_fn(batch, config=None):
     batch_filenames = []
 
     for i, item in enumerate(batch):
-        try:
             input_audio = item['input']
             s1_audio = item['separation_targets']['s1']
             s2_audio = item['separation_targets']['s2']
