@@ -112,8 +112,8 @@ class ImprovedJointModel(nn.Module):
         """
         
         try:
-            pri_path = "/content/drive/MyDrive/joint/WaveNet-VNNs-for-ANC/WaveNet_VNNs/pri_channel.mat"
-            sec_path = "/content/drive/MyDrive/joint/WaveNet-VNNs-for-ANC/WaveNet_VNNs/sec_channel.mat"
+            pri_path = "/Joint/channel/pri_channel.mat"
+            sec_path = "/Joint/channel/sec_channel.mat"
             
             pri_channel = torch.tensor(
                 loadmat(pri_path)["pri_channel"].squeeze(), 
