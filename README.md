@@ -121,8 +121,8 @@ pip install -r requirements.txt
 
 ## References
 
-SudoRMRF
+SudoRMRF:
 https://github.com/etzinis/sudo_rm_rf
 
-WaveNet-Vnns
+WaveNet-Vnns:
 https://github.com/Lu-Baihh/WaveNet-VNNs-for-ANC
