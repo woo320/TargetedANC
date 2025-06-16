@@ -361,8 +361,7 @@ def run_joint_inference(
     print(f"- Final: {final_out}")
 
 
-def quick_inference(joint_model_path, input_audio_dir, output_base_dir, skip_first=3):
-
+def quick_inference(joint_model_path, input_audio_dir, output_base_dir, skip_first=2):
     # 출력 디렉토리 생성
     output_dirs = {
         'sep_out': os.path.join(output_base_dir, "broadcast"),
