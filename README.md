@@ -47,8 +47,7 @@ Simplaza의 74개의 항공사 기내 안전 안내방송 음원과 AI HUB의 �
 ---
 
 ## Inference_Pipeline
-**분리, 분류, 저감 각 모델의 Training과 Inference 코드 입니다.**
-**아래의 내용은 Command line usage example입니다.**
+**분리, 분류, 저감 각 모델의 Training과 Inference 코드이며, 아래의 내용은 Command line usage example입니다.**
 
 **실행 환경은 Google Colab을 기준으로 작성되었습니다.**  
 **모든 out 및 output 인자들은 빈 디렉토리로 미리 준비해두어야 합니다.**
