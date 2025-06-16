@@ -14,6 +14,12 @@ pip install -r requirements.txt
 
 ---
 
+**Benchmark Dataset**
+
+Demand: https://www.kaggle.com/datasets/chrisfilo/demand
+
+ms_snsd: https://www.kaggle.com/datasets/jiangwq666/ms-snsd
+
 
 ## Training Data
 Training Data Download Link : https://drive.google.com/file/d/1odQm9jrT03vR3z78yDJt0k169AYluz3M/view?usp=sharing
@@ -122,11 +128,6 @@ Simplaza의 74개의 항공사 기내 안전 안내방송 음원과 AI HUB의 �
   --device 0
 ```
 
-**Benchmark Dataset**
-
-Demand: https://www.kaggle.com/datasets/chrisfilo/demand
-
-ms_snsd: https://www.kaggle.com/datasets/jiangwq666/ms-snsd
 
 
 ### WaveNet-VNNs Infernce Command
