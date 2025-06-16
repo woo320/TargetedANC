@@ -17,7 +17,9 @@ pip install -r requirements.txt
 
 ## Training Data
 https://drive.google.com/file/d/1odQm9jrT03vR3z78yDJt0k169AYluz3M/view?usp=sharing
-![Dataset Analysis Tables](https://github.com/user-attachments/assets/a02c34e8-2300-44c7-8ad5-4a4dd7f9cf3f)
+<div align="center">
+<img src="https://github.com/user-attachments/assets/a02c34e8-2300-44c7-8ad5-4a4dd7f9cf3f" alt="Dataset Analysis Tables" width="600">
+</div>
 
 
 
