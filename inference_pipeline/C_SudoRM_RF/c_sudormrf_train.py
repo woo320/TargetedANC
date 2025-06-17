@@ -32,7 +32,7 @@ def main():
     args = parser.get_args()
     hparams = vars(args)
 
-    # ─── 데이터로더 생성 ──────────────────────────────────────
+    # 데이터로더 생성
     gens = dataset_setup.setup(hparams)
     assert hparams['n_channels'] == 1, 'Only mono-channel input supported'
     train_loader = gens['train']
@@ -41,7 +41,7 @@ def main():
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    # ─── SI-SDR 평가 지표 객체 생성 ──────────────────────────
+    # SI-SDR 평가 지표 객체 생성
     sisdr_metric = sisdr_lib.StabilizedPermInvSISDRMetric(
         zero_mean=True,
         single_source=False,
@@ -53,7 +53,7 @@ def main():
     ).to(device)
     sisdr_metric.permutations_tensor = sisdr_metric.permutations_tensor.to(device)
 
-    # ─── 모델 생성 ──────────────────────────────────────────
+    # 모델 생성
     model = causal_improved_sudormrf.CausalSuDORMRF(
         in_audio_channels=1,
         out_channels=hparams['out_channels'],
@@ -73,7 +73,7 @@ def main():
         patience=hparams['patience']
     )
 
-    # ─── Checkpoint 설정 ───────────────────────────────────
+    # Checkpoint 설정
     ckpt_dir = hparams['checkpoints_path']
     os.makedirs(ckpt_dir, exist_ok=True)
     best_ckpt_path = os.path.join(ckpt_dir, "causal_best.pt")
@@ -91,7 +91,7 @@ def main():
         print(f"▶ Resume from checkpoint: {last_ckpt_path}")
         print(f"   Loaded epoch={ckpt['epoch']}, best_val={best_val:.2f}, no_improve={no_improve}")
 
-    # ─── 온라인 증강 함수 정의 (에너지/순서 다양성 확보) ────────
+    # 온라인 증강 함수 정의 (에너지/순서 다양성 확보)
     def online_augment(sources):
         B, n_src, T = sources.shape
         device = sources.device
@@ -104,7 +104,7 @@ def main():
 
     es_patience = hparams.get('early_stop_patience', hparams['patience'])
 
-    # ─── 메인 학습 루프 ──────────────────────────────────────
+    # 메인 학습 루프
     for epoch in range(start_epoch, hparams['n_epochs'] + 1):
         model.train()
         running_loss = 0.0
@@ -141,7 +141,7 @@ def main():
 
         avg_train_loss = running_loss / len(train_loader)
 
-        # ─── 검증 루프 ───────────────────────────────────────
+        # 검증 루프
         model.eval()
         val_scores = []
         with torch.no_grad():
@@ -190,7 +190,7 @@ def main():
 
     print(f"\nTraining finished. Best Val SISDRi: {best_val:.2f} dB\n")
 
-    # ─── 테스트 루프 (best model) ──────────────────────────
+    # 테스트 루프
     model.load_state_dict(torch.load(best_ckpt_path, map_location=device))
     model.eval()
     test_scores = []
