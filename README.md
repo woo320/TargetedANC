@@ -31,6 +31,8 @@ Training Data Download Link : https://drive.google.com/file/d/1odQm9jrT03vR3z78y
 
 서울 교통 공사의 1~8호선 안내방송음과 AI HUB의 도시 소음 데이터를 사용
 
+분리(C-SuDoRM-RF++), 분류(ASC)에 사용
+
 ---
 
 ### Airplane Data
@@ -43,6 +45,8 @@ Airplane Data Download Link : https://drive.google.com/file/d/1sAq702S0YB-UkHnM5
 총 18시간의 항공 데이터셋
 
 Simplaza의 74개의 항공사 기내 안전 안내방송 음원과 AI HUB의 도시 소음 데이터 중 비행기 소음 데이터를 사용
+
+분리(C-SuDoRM-RF++), 분류(ASC)에 사용
 
 ---
 
