@@ -168,6 +168,14 @@ Mix: 복합 소리 / Final: 분리 + 저감된 소음
 
 ![image](https://github.com/user-attachments/assets/6967239f-373c-4a39-a5f1-7bad2dfaafa9)
 
+## Streamlit Preview
+
+ANC ON
+![image](https://github.com/user-attachments/assets/4b80772f-9d8e-4670-9cd4-cd5e3fd038fe)
+
+ANC OFF
+![image](https://github.com/user-attachments/assets/1b540c31-7870-4d67-bec9-7eed90a0b9b2)
+
 
 ## References
 
