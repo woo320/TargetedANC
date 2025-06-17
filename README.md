@@ -162,6 +162,9 @@ Simplaza의 74개의 항공사 기내 안전 안내방송 음원과 AI HUB의 �
 
 ## Joint Inference Examples
 
+Mix: 복합 소리
+Final: 분리 + 저감된 소음
+
 ![image](https://github.com/user-attachments/assets/6967239f-373c-4a39-a5f1-7bad2dfaafa9)
 
 
