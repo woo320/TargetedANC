@@ -14,7 +14,7 @@ import soundfile as sf
 import numpy as np
 import sys
 
-# ── 프로젝트 루트 경로를 PYTHONPATH에 추가 (import 경로 보장)
+# 프로젝트 루트 경로를 PYTHONPATH에 추가
 current_dir  = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.abspath(os.path.join(current_dir, os.pardir, os.pardir, os.pardir))
 sys.path.insert(0, project_root)
@@ -92,7 +92,7 @@ def inference_folder(model, hp, input_dir, output_dir):
         inpath = os.path.join(input_dir, fname)
         wav, fs = sf.read(inpath)
 
-        # ── stereo → mono 변환
+        # stereo → mono 변환
         if wav.ndim == 2:
             wav = wav.mean(axis=1)
         assert fs == sr, f"샘플링레이트 불일치: {fs} != {sr}"
@@ -103,7 +103,7 @@ def inference_folder(model, hp, input_dir, output_dir):
 
         t0 = time.time()
 
-        # ── chunk_len 단위로 non-overlap inference 반복
+        # chunk_len 단위로 non-overlap inference 반복
         for start in range(0, L, chunk_len):
             end = min(start + chunk_len, L)
             wav_chunk = wav[start:end]
@@ -121,7 +121,7 @@ def inference_folder(model, hp, input_dir, output_dir):
         total_time = time.time() - t0
         total_ms = total_time * 1000.0
 
-        # ── 결과 소스별로 저장
+        # 결과 소스별로 저장
         basename = os.path.splitext(fname)[0]
         for i in range(n_src):
             outpath = os.path.join(output_dir, f"{basename}_s{i+1}.wav")
@@ -143,7 +143,7 @@ if __name__ == "__main__":
                         help="분리 결과 저장 폴더")
     args = parser.parse_args()
 
-    # ── 학습/실행에 사용한 주요 하이퍼파라미터
+    # 학습/실행에 사용한 주요 하이퍼파라미터
     hp = {
         'out_channels':     256,
         'in_channels':      512,
