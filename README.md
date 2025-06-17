@@ -162,7 +162,7 @@ Simplaza의 74개의 항공사 기내 안전 안내방송 음원과 AI HUB의 �
 
 ## Joint Inference Examples
 
-Joint/colab_Inference_Example.ipynb 를 통해 5개의 test data로 joint 추론 결과를 확인하실 수 있습니다.
+Joint/colab_Inference_Example.ipynb 를 통해 test data로 joint 추론 결과를 확인하실 수 있습니다.
 
 Mix: 복합 소리 / Final: 분리 + 저감된 소음
 
