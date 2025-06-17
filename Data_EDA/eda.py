@@ -21,6 +21,7 @@ def analyze_wav_pair(spk1_path, spk2_path, mix_path):
         rms2 = np.sqrt(np.mean(y2**2))
         rms_mix = np.sqrt(np.mean(y3**2))
 
+        #중심주파수 계산
         def center_freq(y, sr):
             f, _, Sxx = spectrogram(y, fs=sr, nperseg=512)
             Sxx_mean = np.mean(Sxx, axis=1)
