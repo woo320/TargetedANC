@@ -170,6 +170,9 @@ Mix: 복합 소리 / Final: 분리 + 저감된 소음
 
 ## Streamlit Preview
 
+```cd Streamlit```
+```streamlit run Streamlit_test.py```
+
 ANC ON
 ![image](https://github.com/user-attachments/assets/4b80772f-9d8e-4670-9cd4-cd5e3fd038fe)
 
