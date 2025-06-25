@@ -196,3 +196,4 @@ https://github.com/etzinis/sudo_rm_rf
 
 WaveNet-VNNs:
 https://github.com/Lu-Baihh/WaveNet-VNNs-for-ANC
+- 테스트 커밋 (권한 확인용) 🎉
